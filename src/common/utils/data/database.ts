@@ -144,7 +144,7 @@ export async function loadDatabase(force = false): Promise<Omit<Database, "time"
 		// 并返回空对象,但空对象传给 populateDatabaseVariables 会把 undefined 赋给
 		// 每个全局变量,导致后续访问 .xxx 全部炸。这里把空数据库替换为默认初始
 		// 值,确保首次加载或扩展上下文失效后能正常 fallback 到默认行为。
-		const safe = (database && Object.keys(database).length > 0) ? database : (getDefaultStorage(DEFAULT_STORAGE) as any);
+		const safe = database && Object.keys(database).length > 0 ? database : (getDefaultStorage(DEFAULT_STORAGE) as any);
 		populateDatabaseVariables(safe);
 		console.debug("TT - Database loaded.");
 		return safe as any;
