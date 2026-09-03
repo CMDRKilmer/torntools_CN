@@ -88,7 +88,9 @@ export class ExtensionFeatureManager implements FeatureManager {
 
 	private logError(info: string | string[], error: any) {
 		if (error?.message === "Extension context invalidated.") return;
-		if (error?.message === "Maximum cycles reached." && !settings.developer) return;
+		// 注意:settings 可能为 undefined,直接访问 .developer 会抛 TypeError。
+		// 用可选链安全地判断,默认用户(没有 developer 字段)也走静默路径。
+		if (error?.message === "Maximum cycles reached." && !settings?.developer) return;
 
 		this.errorCount = this.errorCount + 1;
 		if (this.errorCount === 1) {
