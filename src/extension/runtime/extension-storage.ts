@@ -130,11 +130,7 @@ export class TTExtensionStorage extends TornToolsStorage {
 		const writes: Promise<void>[] = [];
 		if (keys.includes("cache")) writes.push(clearCacheFromStorage());
 		if (keys.some((k) => k !== "cache"))
-			writes.push(
-				browser.storage.local
-					.remove(keys.filter((k) => k !== "cache"))
-					.catch((error) => console.warn("storage.local.remove failed:", error)),
-			);
+			writes.push(browser.storage.local.remove(keys.filter((k) => k !== "cache")).catch((error) => console.warn("storage.local.remove failed:", error)));
 
 		await Promise.all(writes);
 	}
