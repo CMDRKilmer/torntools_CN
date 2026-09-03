@@ -270,7 +270,7 @@ async function handleTornApiState(location: FetchLocation, options: FetchOptions
 			.then((value) => {
 				if (value === "error") return setBadge("default");
 			})
-			.catch(() => console.error("TT - Couldn't get the badge text."));
+			.catch(() => console.warn("TT - Couldn't get the badge text."));
 
 		await ttStorage.change({ api: { torn: { online: true, error: "" } } });
 	}

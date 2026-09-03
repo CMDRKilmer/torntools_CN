@@ -101,15 +101,35 @@ const ExtensionRuntimeStorage: RuntimeStorage = {
 
 const ExtensionOffloadService: OffloadService = {
 	fetchRelay<R = any>(location: string, options: Record<string, any>): Promise<R> {
-		return BACKGROUND_SERVICE.fetchRelay(location as FetchLocation, options) as Promise<R>;
+		// MV3 service worker 可能在休眠后被回收,首次 sendMessage 会抛 'No SW'。
+		// 这里做一次自动重试,等 SW 启动后再试一次,避免上层看到噪音错误。
+		return callBackgroundWithRetry<R>(() => BACKGROUND_SERVICE.fetchRelay(location as FetchLocation, options) as Promise<R>);
 	},
 	initialize(): Promise<{ success: boolean; error?: any }> {
-		return BACKGROUND_SERVICE.initialize();
+		return callBackgroundWithRetry(() => BACKGROUND_SERVICE.initialize());
 	},
 	async reinitializeTimers() {
-		await BACKGROUND_SERVICE.reinitializeTimers();
+		await callBackgroundWithRetry(() => BACKGROUND_SERVICE.reinitializeTimers());
 	},
 };
+
+/**
+ * 调用 background service,若失败原因是 SW 未启动(No SW / Could not establish),
+ * 等 500ms 后重试一次。其它错误原样抛出。
+ */
+async function callBackgroundWithRetry<T>(fn: () => Promise<T>, retries = 1): Promise<T> {
+	try {
+		return await fn();
+	} catch (error: any) {
+		const message = error?.message || "";
+		const isSwStartFailure = /No SW|Could not establish|Receiving end does not exist/i.test(message);
+		if (!isSwStartFailure || retries <= 0) throw error;
+
+		// 等 SW 启动
+		await new Promise((resolve) => setTimeout(resolve, 500));
+		return callBackgroundWithRetry(fn, retries - 1);
+	}
+}
 
 const ExtensionDataFetcher: DataFetcher = {
 	async fetch(url: string, options?: { method?: string; headers?: Record<string, string>; body?: any; timeout?: number }): Promise<FetchResponse> {
