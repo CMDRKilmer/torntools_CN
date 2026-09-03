@@ -2,6 +2,8 @@
 	import * as Command from "@svelte/components/ui/command";
 	import * as Dialog from "@svelte/components/ui/dialog";
 	import { push } from "svelte-spa-router";
+	import { shouldEnableTranslation } from "@extension/utils/i18n/dom-translator";
+	import { OVERLAY_DICT } from "@extension/utils/i18n/overlay";
 	import { PREFERENCE_GROUPS } from "./configuration";
 	import { getLastKey, PREFERENCE_SEARCH_DATA } from "./preference-search-data";
 	import type { SearchablePreference } from "./preference-search-data";
@@ -12,6 +14,27 @@
 	}
 
 	let { open = $bindable(false) }: PreferenceSearchProps = $props();
+
+	// 仅在中文环境下翻译 label,其余保持原文,搜索框还能用英文搜
+	const translateEnabled = shouldEnableTranslation();
+
+	function translateLabel(text: string): string {
+		if (!translateEnabled || !text) return text;
+		// 1) 精确匹配
+		const exact = OVERLAY_DICT[text];
+		if (exact) return exact;
+		// 2) 子串匹配(按 key 长度降序)
+		const keys = Object.keys(OVERLAY_DICT).sort((a, b) => b.length - a.length);
+		let result = text;
+		let hit = false;
+		for (const key of keys) {
+			if (key.length < 3) continue;
+			if (!result.includes(key)) continue;
+			result = result.split(key).join(OVERLAY_DICT[key]);
+			hit = true;
+		}
+		return hit ? result : text;
+	}
 
 	const groupedData = $derived(
 		PREFERENCE_GROUPS.filter((group) => PREFERENCE_SEARCH_DATA.some((item) => item.group === group.id)).flatMap((group) => {
@@ -27,6 +50,7 @@
 	);
 
 	function getKeywords(item: SearchablePreference): string[] {
+		// 搜索时同时保留中英 keyword,方便用户用英文搜
 		return [item.label, getLastKey(item.path), ...(item.keywords ?? [])].filter((t) => !!t);
 	}
 
@@ -63,9 +87,9 @@
 						{#each group.items as item (item.path)}
 							<Command.Item value={item.path} keywords={getKeywords(item)} onSelect={() => selectPreference(item)}>
 								<div>
-									<span class="truncate text-sm">{item.label}</span>
+									<span class="truncate text-sm">{translateLabel(item.label)}</span>
 									{#if item.description}
-										<span class="text-muted-foreground truncate text-xs">{item.description}</span>
+										<span class="text-muted-foreground truncate text-xs">{translateLabel(item.description)}</span>
 									{/if}
 								</div>
 							</Command.Item>
