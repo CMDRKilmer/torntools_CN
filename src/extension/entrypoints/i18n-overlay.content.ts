@@ -35,7 +35,7 @@ function waitForBody(): Promise<void> {
 const translatedNodes = new WeakSet<Element>();
 
 function isInsideTorntoolsControlPanel(node: Node | null): boolean {
-	let cur: Element | null = node instanceof Element ? node : node?.parentElement ?? null;
+	let cur: Element | null = node instanceof Element ? node : (node?.parentElement ?? null);
 	while (cur) {
 		if (cur.id && (cur.id.startsWith("tt-") || cur.id === "torn-cn-panel" || cur.id === "torn-cn-notice")) {
 			return true;
@@ -96,11 +96,11 @@ function translateElement(el: Element) {
 	// 翻译文本子节点
 	const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
 		acceptNode(node) {
-		const t = (node.nodeValue || "").trim();
-		if (!t || !/[a-zA-Z]/.test(t)) return NodeFilter.FILTER_REJECT;
-		const parent = node.parentElement;
-		if (!parent || isInsideTorntoolsControlPanel(parent)) return NodeFilter.FILTER_REJECT;
-		return NodeFilter.FILTER_ACCEPT;
+			const t = (node.nodeValue || "").trim();
+			if (!t || !/[a-zA-Z]/.test(t)) return NodeFilter.FILTER_REJECT;
+			const parent = node.parentElement;
+			if (!parent || isInsideTorntoolsControlPanel(parent)) return NodeFilter.FILTER_REJECT;
+			return NodeFilter.FILTER_ACCEPT;
 		},
 	});
 	const nodes: Text[] = [];
@@ -121,7 +121,7 @@ function translateAttributes(el: Element) {
 		const trimmed = v.trim();
 		const exact = OVERLAY_DICT[trimmed];
 		if (exact) {
-		el.setAttribute(attr, v.replace(trimmed, exact));
+			el.setAttribute(attr, v.replace(trimmed, exact));
 		}
 	}
 }
@@ -132,18 +132,18 @@ function init() {
 
 	const observer = new MutationObserver((mutations) => {
 		for (const m of mutations) {
-		if (m.type === "childList") {
-			for (const node of Array.from(m.addedNodes)) {
-				if (node.nodeType === 1) {
-					translateElement(node as Element);
-					translateAttributes(node as Element);
-				} else if (node.nodeType === 3) {
-					translateTextNode(node as Text);
+			if (m.type === "childList") {
+				for (const node of Array.from(m.addedNodes)) {
+					if (node.nodeType === 1) {
+						translateElement(node as Element);
+						translateAttributes(node as Element);
+					} else if (node.nodeType === 3) {
+						translateTextNode(node as Text);
+					}
 				}
+			} else if (m.type === "attributes") {
+				translateAttributes(m.target as Element);
 			}
-		} else if (m.type === "attributes") {
-			translateAttributes(m.target as Element);
-		}
 		}
 	});
 
@@ -158,11 +158,7 @@ function init() {
 // noinspection JSUnusedGlobalSymbols
 export default defineContentScript({
 	matches: ["https://*.torn.com/*"],
-	excludeMatches: [
-		"https://*.torn.com/logout.php*",
-		"https://api.torn.com/*",
-		"https://wiki.torn.com/*",
-	],
+	excludeMatches: ["https://*.torn.com/logout.php*", "https://api.torn.com/*", "https://wiki.torn.com/*"],
 	runAt: "document_idle",
 	async main() {
 		if (!shouldEnable()) return;

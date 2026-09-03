@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { t } from "@extension/utils/i18n";
 	import { Button } from "@svelte/components/ui/button";
 	import * as Kbd from "@svelte/components/ui/kbd";
 	import MagnifyingGlassIcon from "phosphor-svelte/lib/MagnifyingGlassIcon";
 	import { link } from "svelte-spa-router";
-	import { t } from "@extension/utils/i18n";
 	import type { PreferenceGroupId } from "./configuration";
 	import { PREFERENCE_GROUPS } from "./configuration";
 	import { getPreferenceGroupRoute } from "./preferences";

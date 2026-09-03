@@ -14,8 +14,8 @@
  *   t("options", "Save", "保存")             // 带默认值,避免漏译
  */
 import { EN } from "./en";
-import { ZH_CN } from "./zh-CN";
 import type { Locale, LocaleTable, Namespace } from "./types";
+import { ZH_CN } from "./zh-CN";
 
 const LOCALES: Record<Locale, LocaleTable> = {
 	en: EN,

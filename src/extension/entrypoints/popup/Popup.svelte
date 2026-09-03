@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from "@extension/utils/i18n";
 	import { onMount } from "svelte";
 	import Router, { replace, router } from "svelte-spa-router";
 	import Calculator from "./components/calculator/Calculator.svelte";
@@ -10,7 +11,6 @@
 	import PopupRedirect from "./components/PopupRedirect.svelte";
 	import Stocks from "./components/stocks/Stocks.svelte";
 	import { apiStore, initializeDatabaseStore, settingsStore } from "./stores/database-store.svelte";
-	import { t } from "@extension/utils/i18n";
 	import { getStartupPath } from "./tabs";
 
 	const routes = {

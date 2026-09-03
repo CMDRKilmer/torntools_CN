@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { exposeDebugObjects } from "@common/utils/functions/pages-debug";
 	import { BACKGROUND_SERVICE } from "@extension/services/proxy-services";
+	import { t } from "@extension/utils/i18n";
 	import { Separator } from "@svelte/components/ui/separator";
 	import { Toaster } from "@svelte/components/ui/sonner";
 	import * as Tooltip from "@svelte/components/ui/tooltip";
@@ -10,7 +11,6 @@
 	import { link } from "svelte-spa-router";
 	import active from "svelte-spa-router/active";
 	import { registerExtensionContext } from "@/runtime/extension-context";
-	import { t } from "@extension/utils/i18n";
 	import { initializeDatabaseStore, settingsStore } from "../stores/database-store.svelte";
 
 	const { children }: { children: Snippet } = $props();

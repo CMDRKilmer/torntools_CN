@@ -31,7 +31,7 @@ export function shouldEnableTranslation(): boolean {
 }
 
 function isInsideSkip(node: Node | null): boolean {
-	let cur: Element | null = node instanceof Element ? node : node?.parentElement ?? null;
+	let cur: Element | null = node instanceof Element ? node : (node?.parentElement ?? null);
 	while (cur) {
 		if (cur.id && cur.id.startsWith("tt-")) return true;
 		cur = cur.parentElement;
