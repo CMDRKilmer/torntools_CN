@@ -1,7 +1,7 @@
 import { RUNTIME_INFORMATION, RUNTIME_STORAGE, ttStorage } from "@common/utils/context";
 import { ttCache } from "@common/utils/data/cache";
 import type { DatabaseCache } from "@common/utils/data/cache";
-import { DEFAULT_STORAGE, DefaultSetting } from "@common/utils/data/default-database";
+import { DEFAULT_STORAGE, DefaultSetting, getDefaultStorage } from "@common/utils/data/default-database";
 import type { DefaultStorageType } from "@common/utils/data/default-database";
 import { executeMigrationScripts } from "@common/utils/data/migrations";
 
@@ -140,9 +140,14 @@ export async function loadDatabase(force = false): Promise<Omit<Database, "time"
 
 	databaseLoadPromise = (async () => {
 		const database = await ttStorage.get();
-		populateDatabaseVariables(database);
+		// storage.local.get 在上下文失效时会抛错,虽然 storage.ts 已经 try/catch
+		// 并返回空对象,但空对象传给 populateDatabaseVariables 会把 undefined 赋给
+		// 每个全局变量,导致后续访问 .xxx 全部炸。这里把空数据库替换为默认初始
+		// 值,确保首次加载或扩展上下文失效后能正常 fallback 到默认行为。
+		const safe = (database && Object.keys(database).length > 0) ? database : (getDefaultStorage(DEFAULT_STORAGE) as any);
+		populateDatabaseVariables(safe);
 		console.debug("TT - Database loaded.");
-		return database;
+		return safe as any;
 	})();
 
 	try {

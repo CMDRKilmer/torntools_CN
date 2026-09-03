@@ -33,24 +33,58 @@ function flattenCache(cache: DatabaseCache): CacheEntry[] {
 }
 
 async function readCache(): Promise<DatabaseCache | undefined> {
-	return isContentScript ? BACKGROUND_SERVICE.cacheGet() : getCache();
+	if (isContentScript) {
+		try {
+			return await callBackgroundWithRetry(() => BACKGROUND_SERVICE.cacheGet());
+		} catch (error) {
+			console.warn("cacheGet failed:", error);
+			return undefined;
+		}
+	}
+	return getCache();
 }
 
 async function writeCacheEntries(entries: CacheEntry[]): Promise<void> {
 	if (isContentScript) {
-		await BACKGROUND_SERVICE.cacheSetEntries(entries);
-	} else {
-		await idbSetCacheEntries(entries);
-		await bumpCacheVersion();
+		try {
+			await callBackgroundWithRetry(() => BACKGROUND_SERVICE.cacheSetEntries(entries));
+		} catch (error) {
+			console.warn("cacheSetEntries failed:", error);
+		}
+		return;
 	}
+	await idbSetCacheEntries(entries);
+	await bumpCacheVersion();
 }
 
 async function clearCacheFromStorage(section?: string): Promise<void> {
 	if (isContentScript) {
-		await BACKGROUND_SERVICE.cacheClearEntries(section);
-	} else {
-		await removeCacheEntries(section);
-		await bumpCacheVersion();
+		try {
+			await callBackgroundWithRetry(() => BACKGROUND_SERVICE.cacheClearEntries(section));
+		} catch (error) {
+			console.warn("cacheClearEntries failed:", error);
+		}
+		return;
+	}
+	await removeCacheEntries(section);
+	await bumpCacheVersion();
+}
+
+/**
+ * 在扩展上下文里调 background RPC,SW 未启动时等 500ms 重试一次。
+ * 这里本地复制一份,避免 extension-context.ts 与 extension-storage.ts 之间形成
+ * 互相 import 循环(storage.ts 被 context.ts 间接 import)。
+ */
+async function callBackgroundWithRetry<T>(fn: () => Promise<T>, retries = 1): Promise<T> {
+	try {
+		return await fn();
+	} catch (error: any) {
+		const message = error?.message || "";
+		const isSwStartFailure = /No SW|Could not establish|Receiving end does not exist/i.test(message);
+		if (!isSwStartFailure || retries <= 0) throw error;
+
+		await new Promise((resolve) => setTimeout(resolve, 500));
+		return callBackgroundWithRetry(fn, retries - 1);
 	}
 }
 
