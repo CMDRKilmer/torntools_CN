@@ -107,10 +107,18 @@ export class ExtensionFeatureManager implements FeatureManager {
 		if (!this.container) {
 			this.earlyErrors.push(error);
 		} else if (this.errorCount <= 25) {
-			this.container.setAttribute("error-count", this.errorCount.toString());
+			try {
+				this.container.setAttribute("error-count", this.errorCount.toString());
+			} catch {
+				// 上下文失效时 setAttribute 会抛错,忽略即可
+			}
 			this.addErrorToPopup(error).catch((err) => console.error(err));
 		} else {
-			this.container.setAttribute("error-count", "25+");
+			try {
+				this.container.setAttribute("error-count", "25+");
+			} catch {
+				// 同上
+			}
 		}
 	}
 
@@ -140,7 +148,12 @@ export class ExtensionFeatureManager implements FeatureManager {
 	private async addErrorToPopup(error: any) {
 		if (!this.container) return;
 
-		this.container.setAttribute("error-count", this.errorCount.toString());
+		try {
+			this.container.setAttribute("error-count", this.errorCount.toString());
+		} catch {
+			// 上下文失效时 setAttribute 会抛错,直接放弃本次弹错
+			return;
+		}
 
 		let errorElement: HTMLElement;
 		if (error != null && typeof error === "object") {

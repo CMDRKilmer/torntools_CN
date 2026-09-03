@@ -60,7 +60,7 @@ export class TTExtensionStorage extends TornToolsStorage {
 	override get<K extends readonly DatabaseKey[]>(keys: K): Promise<{ [I in keyof K]: K[I] extends DatabaseKey ? Database[K[I]] : never }>;
 	override async get(key?: DatabaseKey | DatabaseKey[]) {
 		if (Array.isArray(key)) {
-			const data = await browser.storage.local.get(key as string[]);
+			const data = await this.safeStorageGet(key as string[]);
 			if ((key as DatabaseKey[]).includes("cache")) {
 				data.cache = await readCache();
 			}
@@ -68,9 +68,9 @@ export class TTExtensionStorage extends TornToolsStorage {
 			return key.map((i) => data[i]);
 		} else if (key) {
 			if (key === "cache") return await readCache();
-			return (await browser.storage.local.get([key]))[key];
+			return (await this.safeStorageGet([key]))[key];
 		} else {
-			const data = await browser.storage.local.get();
+			const data = await this.safeStorageGet();
 			delete data[CACHE_VERSION_KEY];
 			delete data[FALLBACK_CACHE_KEY];
 
@@ -81,16 +81,38 @@ export class TTExtensionStorage extends TornToolsStorage {
 		}
 	}
 
+	/**
+	 * storage.local.get 的容错包装:
+	 * 当扩展上下文失效(Extension context invalidated)、SW 被回收或 tab 关闭时,
+	 * 直接抛错会让上层崩溃。这里捕获后返回空对象,让上层走默认值。
+	 */
+	private async safeStorageGet(keys?: string | string[]) {
+		try {
+			return await browser.storage.local.get(keys as any);
+		} catch (error) {
+			console.warn("storage.local.get failed:", error);
+			return {} as Record<string, any>;
+		}
+	}
+
 	override async set(object: { [key: string]: any }) {
 		const cache = object.cache;
 		const rest = { ...object };
 		delete rest.cache;
 
 		if (cache !== undefined) {
-			await writeCacheEntries(flattenCache(cache));
+			try {
+				await writeCacheEntries(flattenCache(cache));
+			} catch (error) {
+				console.warn("writeCacheEntries failed:", error);
+			}
 		}
 		if (Object.keys(rest).length) {
-			await browser.storage.local.set(rest);
+			try {
+				await browser.storage.local.set(rest);
+			} catch (error) {
+				console.warn("storage.local.set failed:", error);
+			}
 		}
 	}
 
@@ -107,13 +129,22 @@ export class TTExtensionStorage extends TornToolsStorage {
 
 		const writes: Promise<void>[] = [];
 		if (keys.includes("cache")) writes.push(clearCacheFromStorage());
-		if (keys.some((k) => k !== "cache")) writes.push(browser.storage.local.remove(keys.filter((k) => k !== "cache")));
+		if (keys.some((k) => k !== "cache"))
+			writes.push(
+				browser.storage.local
+					.remove(keys.filter((k) => k !== "cache"))
+					.catch((error) => console.warn("storage.local.remove failed:", error)),
+			);
 
 		await Promise.all(writes);
 	}
 
 	override async clear() {
-		await browser.storage.local.clear();
+		try {
+			await browser.storage.local.clear();
+		} catch (error) {
+			console.warn("storage.local.clear failed:", error);
+		}
 		await clearCacheFromStorage();
 	}
 

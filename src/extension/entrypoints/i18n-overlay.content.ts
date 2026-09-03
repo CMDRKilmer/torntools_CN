@@ -51,9 +51,12 @@ function shouldSkipTag(tag: string): boolean {
 }
 
 function translateTextNode(node: Text): boolean {
-	if (!node.nodeValue || translatedNodes.has(node.parentElement as Element)) return false;
-	const original = node.nodeValue;
-	if (!/[a-zA-Z]/.test(original)) return false; // 没有英文字母
+	// 文本节点可能脱离 DOM(parentElement === null),此时 WeakSet 不可用且无需标记
+	const parent = node.parentElement;
+	if (parent && translatedNodes.has(parent)) return false;
+
+	const original = node.nodeValue || "";
+	if (!original || !/[a-zA-Z]/.test(original)) return false; // 没有英文字母
 	const trimmed = original.trim();
 	if (!trimmed) return false;
 
@@ -66,7 +69,7 @@ function translateTextNode(node: Text): boolean {
 				? ""
 				: original.slice(original.indexOf(trimmed) + trimmed.length);
 		node.nodeValue = leading + exact + trailing;
-		translatedNodes.add(node.parentElement as Element);
+		if (parent) translatedNodes.add(parent);
 		return true;
 	}
 
@@ -82,7 +85,7 @@ function translateTextNode(node: Text): boolean {
 	}
 	if (hit) {
 		node.nodeValue = result;
-		translatedNodes.add(node.parentElement as Element);
+		if (parent) translatedNodes.add(parent);
 		return true;
 	}
 	return false;

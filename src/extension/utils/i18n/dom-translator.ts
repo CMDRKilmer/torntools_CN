@@ -45,10 +45,11 @@ function shouldSkipTag(tag: string): boolean {
 }
 
 function translateTextNode(node: Text): boolean {
-	if (!node.nodeValue) return false;
-	if (translatedNodes.has(node.parentElement as Element)) return false;
-	const original = node.nodeValue;
-	if (!/[a-zA-Z]/.test(original)) return false;
+	// 文本节点可能脱离 DOM(parentElement === null),WeakSet 不可 add null
+	const parent = node.parentElement;
+	if (parent && translatedNodes.has(parent)) return false;
+	const original = node.nodeValue || "";
+	if (!original || !/[a-zA-Z]/.test(original)) return false;
 	const trimmed = original.trim();
 	if (!trimmed) return false;
 
@@ -59,7 +60,7 @@ function translateTextNode(node: Text): boolean {
 		const before = start > 0 ? original.slice(0, start) : "";
 		const after = start + trimmed.length < original.length ? original.slice(start + trimmed.length) : "";
 		node.nodeValue = before + exact + after;
-		translatedNodes.add(node.parentElement as Element);
+		if (parent) translatedNodes.add(parent);
 		return true;
 	}
 
@@ -75,7 +76,7 @@ function translateTextNode(node: Text): boolean {
 	}
 	if (hit) {
 		node.nodeValue = result;
-		translatedNodes.add(node.parentElement as Element);
+		if (parent) translatedNodes.add(parent);
 		return true;
 	}
 	return false;
