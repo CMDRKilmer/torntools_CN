@@ -10,15 +10,16 @@
 	import { link } from "svelte-spa-router";
 	import active from "svelte-spa-router/active";
 	import { registerExtensionContext } from "@/runtime/extension-context";
+	import { t } from "@extension/utils/i18n";
 	import { initializeDatabaseStore, settingsStore } from "../stores/database-store.svelte";
 
 	const { children }: { children: Snippet } = $props();
 
 	const navigation = [
-		{ name: "Changelog", path: "/changelog" },
-		{ name: "Preferences", path: "/preferences", activePath: /^\/preferences(?:\/.*)?$/ },
-		{ name: "Export", path: "/export" },
-		{ name: "About", path: "/about" },
+		{ name: t("options", "Changelog"), path: "/changelog" },
+		{ name: t("options", "Preferences"), path: "/preferences", activePath: /^\/preferences(?:\/.*)?$/ },
+		{ name: t("options", "Export"), path: "/export" },
+		{ name: t("options", "About"), path: "/about" },
 	];
 
 	onMount(() => {
@@ -74,7 +75,7 @@
 							rel="noopener noreferrer"
 							class="rounded px-2 py-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
 						>
-							Targets
+							目标
 						</a>
 					</li>
 				</ul>

@@ -1,3 +1,5 @@
+import { t } from "@extension/utils/i18n";
+
 export interface PreferenceSection {
 	id: string;
 	title: string;
@@ -14,52 +16,52 @@ export type PreferenceGroupId = "internal" | "global" | "financial" | "qol" | "c
 export const PREFERENCE_GROUPS = [
 	{
 		id: "internal",
-		title: "Internal",
+		title: t("options", "Internal"),
 		sections: [
-			{ id: "internal", title: "Internal" },
-			{ id: "popup", title: "Popup" },
-			{ id: "notifications", title: "Notifications" },
-			{ id: "api", title: "API" },
+			{ id: "internal", title: t("options", "Internal") },
+			{ id: "popup", title: t("options", "Popup") },
+			{ id: "notifications", title: t("options", "Notifications") },
+			{ id: "api", title: t("options", "API") },
 		],
 	},
 	{
 		id: "global",
-		title: "Global",
+		title: t("options", "Global"),
 		sections: [
-			{ id: "global", title: "Global" },
-			{ id: "sidebar", title: "Sidebar" },
-			{ id: "chat", title: "Chat" },
-			{ id: "advanced", title: "Advanced" },
+			{ id: "global", title: t("options", "Global") },
+			{ id: "sidebar", title: t("options", "Sidebar") },
+			{ id: "chat", title: t("options", "Chat") },
+			{ id: "advanced", title: t("options", "Advanced") },
 		],
 	},
 	{
 		id: "financial",
-		title: "Financial",
+		title: t("options", "Financial"),
 		sections: [
-			{ id: "money", title: "Money" },
-			{ id: "markets", title: "Markets" },
-			{ id: "items", title: "Items" },
+			{ id: "money", title: t("options", "Money") },
+			{ id: "markets", title: t("options", "Markets") },
+			{ id: "items", title: t("options", "Items") },
 		],
 	},
 	{
 		id: "qol",
-		title: "QoL",
+		title: t("options", "QoL"),
 		sections: [
-			{ id: "information", title: "Information" },
-			{ id: "combat", title: "Combat" },
-			{ id: "travel", title: "Travel" },
-			{ id: "faction", title: "Faction" },
-			{ id: "profile", title: "Profile" },
-			{ id: "companies", title: "Companies" },
-			{ id: "gym", title: "Gym" },
-			{ id: "speed", title: "Speed" },
-			{ id: "racing", title: "Racing" },
+			{ id: "information", title: t("options", "Information") },
+			{ id: "combat", title: t("options", "Combat") },
+			{ id: "travel", title: t("options", "Travel") },
+			{ id: "faction", title: t("options", "Faction") },
+			{ id: "profile", title: t("options", "Profile") },
+			{ id: "companies", title: t("options", "Companies") },
+			{ id: "gym", title: t("options", "Gym") },
+			{ id: "speed", title: t("options", "Speed") },
+			{ id: "racing", title: t("options", "Racing") },
 		],
 	},
 	{
 		id: "connections",
-		title: "Connections",
-		sections: [{ id: "services", title: "Services" }],
+		title: t("options", "Connections"),
+		sections: [{ id: "services", title: t("options", "Services") }],
 	},
 ] as const satisfies readonly PreferenceGroup[];
 export const DEFAULT_GROUP_ID: PreferenceGroupId = "internal";

@@ -1,4 +1,5 @@
 import type { DatabaseSettings } from "@common/utils/data/database";
+import { t } from "@extension/utils/i18n";
 
 export type PopupTabKey = "dashboard" | "marketSearch" | "calculator" | "stocksOverview" | "notifications";
 
@@ -9,11 +10,11 @@ export interface PopupTab {
 }
 
 const POPUP_TABS: PopupTab[] = [
-	{ key: "dashboard", label: "Dashboard", path: "/dashboard" },
-	{ key: "marketSearch", label: "Market", path: "/market" },
-	{ key: "calculator", label: "Calculator", path: "/calculator" },
-	{ key: "stocksOverview", label: "Stocks", path: "/stocks" },
-	{ key: "notifications", label: "Notifications", path: "/notifications" },
+	{ key: "dashboard", label: t("popup", "Dashboard"), path: "/dashboard" },
+	{ key: "marketSearch", label: t("popup", "Market"), path: "/market" },
+	{ key: "calculator", label: t("popup", "Calculator"), path: "/calculator" },
+	{ key: "stocksOverview", label: t("popup", "Stocks"), path: "/stocks" },
+	{ key: "notifications", label: t("popup", "Notifications"), path: "/notifications" },
 ];
 
 export function getEnabledPopupTabs(settings: DatabaseSettings | undefined) {

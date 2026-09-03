@@ -10,6 +10,7 @@
 	import PopupRedirect from "./components/PopupRedirect.svelte";
 	import Stocks from "./components/stocks/Stocks.svelte";
 	import { apiStore, initializeDatabaseStore, settingsStore } from "./stores/database-store.svelte";
+	import { t } from "@extension/utils/i18n";
 	import { getStartupPath } from "./tabs";
 
 	const routes = {
@@ -48,6 +49,6 @@
 	{#if initialized}
 		<Router {routes} />
 	{:else}
-		<div class="text-muted-foreground text-sm">Loading...</div>
+		<div class="text-muted-foreground text-sm">{t("popup", "Loading")}</div>
 	{/if}
 </GlobalLayout>

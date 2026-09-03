@@ -9,6 +9,7 @@
 	import active from "svelte-spa-router/active";
 	import { browser } from "wxt/browser";
 	import { registerExtensionContext } from "@/runtime/extension-context";
+	import { t } from "@extension/utils/i18n";
 	import { BACKGROUND_SERVICE } from "../../../services/proxy-services";
 	import { apiStore, settingsStore } from "../stores/database-store.svelte";
 	import { getEnabledPopupTabs } from "../tabs";
@@ -63,7 +64,7 @@
 							</a>
 						{/each}
 					{/if}
-					<Button variant="ghost" size="sm" class="ml-auto h-5 px-1 py-0.5 text-xs" onclick={() => browser.runtime.openOptionsPage()}>Settings</Button
+					<Button variant="ghost" size="sm" class="ml-auto h-5 px-1 py-0.5 text-xs" onclick={() => browser.runtime.openOptionsPage()}>{t("popup", "Settings")}</Button
 					>
 				</nav>
 			</div>

@@ -86,10 +86,10 @@ export default defineConfig({
 	},
 	manifest: ({ browser }): UserManifest => {
 		const manifest: UserManifest = {
-			name: "TornTools",
-			description: "Several tools for Torn.",
+			name: "TornTools 中文版",
+			description: "Torn 网页游戏增强工具 - 中文汉化版(基于 TornTools by Mephiles)",
 			// @ts-expect-error Discouraged notation, but supported.
-			author: "Gregor Kaljulaid - Mephiles[2087524]",
+			author: "CMDRKilmer (基于 Gregor Kaljulaid - Mephiles[2087524] 的 TornTools)",
 			host_permissions: ["https://torn.com/"],
 			optional_host_permissions: [
 				"https://www.tornstats.com/",

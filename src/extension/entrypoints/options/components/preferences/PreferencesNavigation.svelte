@@ -3,6 +3,7 @@
 	import * as Kbd from "@svelte/components/ui/kbd";
 	import MagnifyingGlassIcon from "phosphor-svelte/lib/MagnifyingGlassIcon";
 	import { link } from "svelte-spa-router";
+	import { t } from "@extension/utils/i18n";
 	import type { PreferenceGroupId } from "./configuration";
 	import { PREFERENCE_GROUPS } from "./configuration";
 	import { getPreferenceGroupRoute } from "./preferences";
@@ -22,7 +23,7 @@
 <aside class="border-sidebar bg-sidebar flex flex-col space-y-1 rounded-lg border p-2">
 	<Button variant="outline" class="text-muted-foreground" onclick={() => (searchOpen = true)}>
 		<MagnifyingGlassIcon />
-		<span class="flex-1">Search</span>
+		<span class="flex-1">{t("common", "Search")}</span>
 
 		<Kbd.Group>
 			<Kbd.Root>{shortcutKey} + K</Kbd.Root>
