@@ -482,14 +482,14 @@ export async function updateUserdata(forceUpdate = false) {
 			!settings.apiUsage.user.education ||
 			!settings.notifications.types.global ||
 			!settings.notifications.types.education ||
-			!oldUserdata.education.current ||
-			newUserdata.education.current
+			!oldUserdata.education?.current ||
+			newUserdata.education?.current
 		)
 			return;
 
 		await dispatchNotification({
-			title: "TornTools - Education",
-			message: "You have finished your education course.",
+			title: "TornTools 中文版 - 教育",
+			message: "你已经完成了教育课程。",
 			url: LINKS.education,
 			date: Date.now(),
 		});
