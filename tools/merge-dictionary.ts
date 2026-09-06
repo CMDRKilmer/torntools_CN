@@ -112,8 +112,8 @@ for (const [cat, entries] of Object.entries(groupedByCategory)) {
 	for (const e of entries) {
 		// key 需要引号当含空格/特殊字符
 		const keyNeedsQuote = /[\s\-_:&'/.,()]/.test(e.en);
-		const key = keyNeedsQuote ? `"${e.en.replace(/"/g, '\\"')}"` : e.en;
-		const value = e.zh.replace(/"/g, '\\"');
+		const key = keyNeedsQuote ? `"${e.en.replaceAll('"', '\\"')}"` : e.en;
+		const value = e.zh.replaceAll('"', '\\"');
 		block.push(`\t${key}: "${value}",`);
 	}
 }

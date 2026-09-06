@@ -335,8 +335,8 @@ if (toAdd.length === 0) {
 const blockLines = ["", "\t// ========== Popup / Options 内部硬编码字符串 =========="];
 for (const [en, zh] of toAdd) {
 	const keyNeedsQuote = /[\s\-_:&'/.,()]/.test(en);
-	const key = keyNeedsQuote ? `"${en.replace(/"/g, '\\"')}"` : en;
-	const value = zh.replace(/"/g, '\\"');
+	const key = keyNeedsQuote ? `"${en.replaceAll('"', '\\"')}"` : en;
+	const value = zh.replaceAll('"', '\\"');
 	blockLines.push(`\t${key}: "${value}",`);
 }
 const block = blockLines.join("\n");

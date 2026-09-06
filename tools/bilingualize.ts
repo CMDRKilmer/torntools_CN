@@ -201,7 +201,7 @@ const UI_SHORT_WORDS = new Set([
  *   \t"Key Name": "value",
  */
 function parseLine(line: string): { key: string; value: string; valueStart: number; valueEnd: number } | null {
-	if (!/^\t/.test(line)) return null;
+	if (!line.startsWith('	')) return null;
 	const trimmed = line.trimStart();
 	if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) return null;
 
@@ -226,7 +226,7 @@ function parseLine(line: string): { key: string; value: string; valueStart: numb
 
 function shouldSkip(key: string, value: string): boolean {
 	if (!value || !key) return true;
-	if (/[()（）\[\]【】]/.test(value)) return true;
+	if (/[()（）[\]【】]/.test(value)) return true;
 	if (value === key) return true;
 	if (/[{}%<>]/.test(key)) return true;
 	if (/[%$]\d|\{[^}]+\}/.test(value)) return true;
