@@ -8,10 +8,17 @@
  *   3. 用 MutationObserver 监听 DOM 变化,翻译动态插入的节点
  *   4. 跳过已经翻译过的节点(避免重复翻译)
  *   5. 不翻译 TornTools 自身控制面板和按钮(避免误伤)
+ *   6. 跳过已含中文字符的文本节点(防重入)
+ *   7. 翻译 tooltip 类属性:title / data-original-title / data-tooltip / data-content / data-tip
  *
  * 配合 t() 模块使用:静态 UI 走 t(),动态注入 UI 走本脚本。
  */
 import { OVERLAY_DICT } from "@extension/utils/i18n/overlay";
+
+const TRANSLATABLE_ATTRS = ["placeholder", "title", "alt", "aria-label", "data-title", "data-original-title", "data-tooltip", "data-content", "data-tip"];
+
+/** 中文检测正则:含汉字则认为已翻译 */
+const CN_CHAR_RE = /[\u4e00-\u9fff]/;
 
 function shouldEnable(): boolean {
 	try {
@@ -33,6 +40,7 @@ function waitForBody(): Promise<void> {
 }
 
 const translatedNodes = new WeakSet<Element>();
+const translatedCache = new Map<string, string>();
 
 function isInsideTorntoolsControlPanel(node: Node | null): boolean {
 	let cur: Element | null = node instanceof Element ? node : (node?.parentElement ?? null);
@@ -57,12 +65,14 @@ function translateTextNode(node: Text): boolean {
 
 	const original = node.nodeValue || "";
 	if (!original || !/[a-zA-Z]/.test(original)) return false; // 没有英文字母
+	if (CN_CHAR_RE.test(original)) return false; // 已含中文
 	const trimmed = original.trim();
 	if (!trimmed) return false;
 
-	// 1) 精确匹配
-	const exact = OVERLAY_DICT[trimmed];
+	// 1) 精确匹配(优先查缓存)
+	const exact = translatedCache.get(trimmed) ?? OVERLAY_DICT[trimmed];
 	if (exact && exact !== trimmed) {
+		translatedCache.set(trimmed, exact);
 		const leading = original.startsWith(trimmed) ? "" : original.slice(0, original.indexOf(trimmed));
 		const trailing =
 			original.endsWith(trimmed) || original.indexOf(trimmed) + trimmed.length >= original.length
@@ -101,6 +111,7 @@ function translateElement(el: Element) {
 		acceptNode(node) {
 			const t = (node.nodeValue || "").trim();
 			if (!t || !/[a-zA-Z]/.test(t)) return NodeFilter.FILTER_REJECT;
+			if (CN_CHAR_RE.test(t)) return NodeFilter.FILTER_REJECT;
 			const parent = node.parentElement;
 			if (!parent || isInsideTorntoolsControlPanel(parent)) return NodeFilter.FILTER_REJECT;
 			return NodeFilter.FILTER_ACCEPT;
@@ -117,14 +128,32 @@ function translateElement(el: Element) {
 
 function translateAttributes(el: Element) {
 	if (!el || isInsideTorntoolsControlPanel(el)) return;
-	const attrs = ["placeholder", "title", "alt", "aria-label"];
-	for (const attr of attrs) {
+	for (const attr of TRANSLATABLE_ATTRS) {
 		const v = el.getAttribute(attr);
 		if (!v || !/[a-zA-Z]/.test(v)) continue;
+		if (CN_CHAR_RE.test(v)) continue;
 		const trimmed = v.trim();
-		const exact = OVERLAY_DICT[trimmed];
-		if (exact) {
+
+		// 1) 精确匹配
+		const exact = translatedCache.get(trimmed) ?? OVERLAY_DICT[trimmed];
+		if (exact && exact !== trimmed) {
+			translatedCache.set(trimmed, exact);
 			el.setAttribute(attr, v.replace(trimmed, exact));
+			continue;
+		}
+
+		// 2) 子串匹配
+		const keys = Object.keys(OVERLAY_DICT).sort((a, b) => b.length - a.length);
+		let result = v;
+		let hit = false;
+		for (const key of keys) {
+			if (key.length < 3) continue;
+			if (!result.includes(key)) continue;
+			result = result.split(key).join(OVERLAY_DICT[key]);
+			hit = true;
+		}
+		if (hit) {
+			el.setAttribute(attr, result);
 		}
 	}
 }
@@ -154,7 +183,7 @@ function init() {
 		childList: true,
 		subtree: true,
 		attributes: true,
-		attributeFilter: ["placeholder", "title", "alt", "aria-label"],
+		attributeFilter: TRANSLATABLE_ATTRS,
 	});
 }
 
