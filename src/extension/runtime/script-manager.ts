@@ -253,6 +253,13 @@ import WeaponExperienceFeature from "@features/weapon-experience/weapon-experien
 export function scriptManager() {
 	void initializeDatabase();
 
+	// Cloudflare 机器人验证期间整个扩展让位:不注册任何 feature,避免
+	// Maximum cycles reached 与 message channel closed 噪音错误。
+	if (isCloudflareChallenge()) {
+		console.info("TT - Cloudflare challenge detected, deferring feature registration.");
+		return;
+	}
+
 	/*
 	 * Feature Management
 	 */
@@ -611,4 +618,23 @@ function isPageWithItemValues(page: string) {
 
 function isRecaptcha(page: string) {
 	return page === "recaptcha";
+}
+
+/**
+ * 检测当前页面是否处于 Cloudflare 机器人验证挑战阶段。
+ *
+ * CF 验证期间 torn.com 的 DOM 被 Cloudflare 重写,所有 requireElement 会触发
+ * "Maximum cycles reached";且 CF 会关闭 background SW 的 message channel,
+ * 导致 cacheGet 等操作抛 "message channel closed" 错误。
+ *
+ * 这种页面让扩展整个让位,等 CF 验证完成、用户重新加载后扩展自然恢复。
+ */
+function isCloudflareChallenge(): boolean {
+	// CF challenge 触发时,URL 会带 _cf_chl_rt_tk 查询参数(无论前后端),
+	// 同时 DOM 中可能有 #cf-chl-bypass / .cf-challenge-running 等标记。
+	if (location.search.includes("_cf_chl_rt_tk=")) return true;
+	if (location.search.includes("__cf_chl_rt_tk=")) return true;
+	if (location.hash.includes("cf-chl-bypass")) return true;
+	if (document.querySelector("#cf-chl-bypass, .cf-challenge-running, #challenge-form")) return true;
+	return false;
 }
