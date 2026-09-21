@@ -1,3 +1,18 @@
 *.ts text eol=lf
 *.md text eol=lf
 *.json text eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.mjs text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.svelte text eol=lf
+*.html text eol=lf
+*.svg text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.lock text eol=lf -diff
+*.txt text eol=lf
+*.css.map binary
+*.js.map binary
