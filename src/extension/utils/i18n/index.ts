@@ -29,7 +29,7 @@ let currentLocale: Locale = "en";
  */
 export function detectLocale(): Locale {
 	try {
-		const lang = (typeof navigator !== "undefined" && navigator.language) || "en";
+		const lang = navigator?.language || "en";
 		if (lang.toLowerCase().startsWith("zh")) return "zh-CN";
 	} catch {
 		// ignore

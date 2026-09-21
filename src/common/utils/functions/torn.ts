@@ -1870,7 +1870,7 @@ export function isCloudflareChallenge(): boolean {
 	if (location.search.includes("_cf_chl_rt_tk=")) return true;
 	if (location.search.includes("__cf_chl_rt_tk=")) return true;
 	if (location.hash.includes("cf-chl-bypass")) return true;
-	if (document.querySelector("#cf-chl-bypass, .cf-challenge-running, #challenge-form")) return true;
+	if (findElement("#cf-chl-bypass, .cf-challenge-running, #challenge-form", document, true)) return true;
 	return false;
 }
 

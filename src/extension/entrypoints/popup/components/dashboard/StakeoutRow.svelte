@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ttStorage } from "@common/utils/context";
 	import type { StoredStakeouts } from "@common/utils/data/default-database";
-	import type { StakeoutRow } from "@extension/entrypoints/popup/components/dashboard/dashboard.svelte";
+	import type { StakeoutRow } from "@extension/entrypoints/popup/components/dashboard/dashboard.svelte.ts";
 	import { stakeoutsStore } from "@extension/entrypoints/popup/stores/database-store.svelte";
 	import { Button } from "@svelte/components/ui/button";
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
