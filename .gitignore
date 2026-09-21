@@ -44,3 +44,8 @@ web-ext.config.ts
 
 wip/
 docs/.astro
+
+# i18n merge 快照 - 仅作本地备份,不上库
+# 中文版在 merge upstream 时会把 src/extension/utils/i18n/ 整体备份到这里,
+# 留到下次 merge 验证无碍后清理;若想保留某次快照,删除该行再 git add docs/i18n-snapshot
+docs/i18n-snapshot/
