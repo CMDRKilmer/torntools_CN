@@ -20,6 +20,13 @@ export function requireCondition<T = any>(condition: RequireConditionFn<T>, part
 	const error = new Error("Maximum cycles reached.");
 
 	return new Promise((resolve, reject) => {
+		// Cloudflare 机器人验证期间 torn.com DOM 被 CF 重写,所有 requireCondition
+		// 都会因条件永远不成立触发 Maximum cycles;立即拒绝以避免噪音错误。
+		if (isCloudflareChallenge()) {
+			reject(error);
+			return;
+		}
+
 		if (checkCondition()) return;
 
 		let counter = 0;

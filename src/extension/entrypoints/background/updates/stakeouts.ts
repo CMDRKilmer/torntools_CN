@@ -18,9 +18,18 @@ export async function updateStakeouts(forceUpdate = false) {
 		return { updated: false };
 	}
 
+	// 防御:旧版本存储或损坏数据可能让 stakeouts.list 不是数组(例如 undefined 或
+	// 旧的对象映射结构)。遍历前归一化,避免 TypeError 打断 background 更新循环。
+	const stakeoutList = Array.isArray(stakeouts?.list) ? stakeouts.list : [];
+	if (stakeoutList.length === 0) {
+		stakeouts.date = now;
+		await ttStorage.change({ stakeouts });
+		return { updated: true, success: 0, failed: 0 };
+	}
+
 	let success = 0;
 	let failed = 0;
-	for (const stakeout of stakeouts.list) {
+	for (const stakeout of stakeoutList) {
 		const id = stakeout.id;
 
 		const oldData = stakeout?.info ?? null;

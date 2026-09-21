@@ -251,19 +251,59 @@ function populateDatabaseVariables(database: Database) {
 	userdata = database.userdata;
 	torndata = database.torndata;
 	localdata = database.localdata;
-	stakeouts = database.stakeouts;
+	// 防御:损坏/旧版本存储可能让 list 不是数组,后续 background 更新
+	// 任务遍历时 TypeError。归一化为数组并写回 storage,避免下次再炸。
+	stakeouts = normalizeStakeouts(database.stakeouts);
 	attackHistory = database.attackHistory;
 	notes = database.notes;
 	factiondata = database.factiondata;
 	quick = database.quick;
 	npcs = database.npcs;
 	stockdata = database.stockdata;
-	factionStakeouts = database.factionStakeouts;
+	factionStakeouts = normalizeFactionStakeouts(database.factionStakeouts);
 	notificationHistory = database.notificationHistory;
 	notifications = database.notifications;
 	migrations = database.migrations;
 
 	ttCache.cache = database.cache;
+}
+
+// 识别旧版本 stakeouts/factionStakeouts 的对象映射格式（9.0.6 之前）。
+// 9.0.6 迁移脚本负责把 `{ "123": {...}, "456": {...} }` 转成数组，
+// 但迁移若被打断，list 会缺失；归一化时优先做就地转换，保留用户数据。
+const STAKEOUTS_RESERVED_KEYS = new Set(["order", "date", "list"]);
+
+function migrateStakeoutEntries(value: Record<string, unknown>): any[] | null {
+	const entries = Object.entries(value).filter(([k, v]) => !STAKEOUTS_RESERVED_KEYS.has(k) && /^\d+$/.test(k) && v && typeof v === "object");
+	if (entries.length === 0) return null;
+	return entries.map(([, v]) => v);
+}
+
+const FACTION_STAKEOUTS_RESERVED_KEYS = new Set(["date", "list"]);
+
+function migrateFactionStakeoutEntries(value: Record<string, unknown>): any[] | null {
+	const entries = Object.entries(value).filter(([k, v]) => !FACTION_STAKEOUTS_RESERVED_KEYS.has(k) && /^\d+$/.test(k) && v && typeof v === "object");
+	if (entries.length === 0) return null;
+	return entries.map(([, v]) => v);
+}
+
+function normalizeStakeouts(value: DatabaseStakeouts | undefined): DatabaseStakeouts {
+	const base: DatabaseStakeouts = value && typeof value === "object" ? value : ({} as DatabaseStakeouts);
+	if (!Array.isArray(base.list)) {
+		// 优先尝试旧对象映射格式的就地迁移，保留用户数据；实在无法识别才退化为空。
+		const migrated = migrateStakeoutEntries(base as unknown as Record<string, unknown>);
+		base.list = migrated ?? [];
+	}
+	return base;
+}
+
+function normalizeFactionStakeouts(value: DatabaseFactionStakeouts | undefined): DatabaseFactionStakeouts {
+	const base: DatabaseFactionStakeouts = value && typeof value === "object" ? value : ({} as DatabaseFactionStakeouts);
+	if (!Array.isArray(base.list)) {
+		const migrated = migrateFactionStakeoutEntries(base as unknown as Record<string, unknown>);
+		base.list = migrated ?? [];
+	}
+	return base;
 }
 
 export async function initializeDatabase() {
@@ -302,7 +342,9 @@ export function initializeDatabaseListener() {
 						torndata = changes.torndata.newValue as DatabaseTorndata;
 						break;
 					case "stakeouts":
-						stakeouts = changes.stakeouts.newValue as DatabaseStakeouts;
+						// 防御:外部写入/扩展升级残余可能让 list 不是数组,经 normalize 兜底
+						// 避免 UI/background 抛 TypeError。
+						stakeouts = normalizeStakeouts(changes.stakeouts.newValue as DatabaseStakeouts);
 						break;
 					case "attackHistory":
 						attackHistory = changes.attackHistory.newValue as DatabaseAttackHistory;
@@ -335,7 +377,7 @@ export function initializeDatabaseListener() {
 						notifications = changes.notifications.newValue as DatabaseNotifications;
 						break;
 					case "factionStakeouts":
-						factionStakeouts = changes.factionStakeouts.newValue as DatabaseFactionStakeouts;
+						factionStakeouts = normalizeFactionStakeouts(changes.factionStakeouts.newValue as DatabaseFactionStakeouts);
 						break;
 				}
 				if (hasStorageListener(key)) {

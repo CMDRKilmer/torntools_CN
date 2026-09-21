@@ -18,9 +18,17 @@ export async function updateFactionStakeouts(forceUpdate = false) {
 		return { updated: false };
 	}
 
+	// 防御:旧版本存储或损坏数据可能让 factionStakeouts.list 不是数组。遍历前归一化。
+	const factionList = Array.isArray(factionStakeouts?.list) ? factionStakeouts.list : [];
+	if (factionList.length === 0) {
+		factionStakeouts.date = now;
+		await ttStorage.change({ factionStakeouts });
+		return { updated: true, success: 0, failed: 0 };
+	}
+
 	let success = 0;
 	let failed = 0;
-	for (const entry of factionStakeouts.list) {
+	for (const entry of factionList) {
 		const factionId = entry.id;
 		const oldData = entry.info ?? null;
 		let data: FetchedFactionStakeout;
