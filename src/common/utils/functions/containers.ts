@@ -2,6 +2,7 @@ import "./containers.css";
 import { ttStorage } from "@common/utils/context";
 import { filters } from "@common/utils/data/database";
 import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { camelCase } from "@common/utils/functions/formatting";
 import { PHFillCaretDown } from "@common/utils/icons/phosphor-icons";
 
@@ -9,7 +10,7 @@ export type ContainerPosition = { parentElement: Element } | { nextElement: Elem
 
 export type ContainerOptions = {
 	id: string;
-	class: string | (string | null)[];
+	class: string | (string | null | undefined)[];
 	showHeader: boolean;
 	onlyHeader: boolean;
 	collapsible: boolean;
@@ -31,7 +32,19 @@ interface Container {
 	collapsed: boolean;
 }
 
-export function createContainer(title: string, partialOptions: Partial<ContainerOptions> & ContainerPosition): Container {
+export function createContainer(
+	title: string,
+	partialOptions: Partial<ContainerOptions> & ContainerPosition & { showHeader: false },
+): Omit<Container, "options">;
+export function createContainer(
+	title: string,
+	partialOptions: Partial<ContainerOptions> & ContainerPosition & { onlyHeader: true },
+): Omit<Container, "content">;
+export function createContainer(title: string, partialOptions: Partial<ContainerOptions> & ContainerPosition): Container;
+export function createContainer(
+	title: string,
+	partialOptions: Partial<ContainerOptions> & ContainerPosition,
+): Container | Omit<Container, "content"> | Omit<Container, "options"> {
 	const options: ContainerOptions = {
 		id: camelCase(title),
 		class: [],
@@ -57,16 +70,23 @@ export function createContainer(title: string, partialOptions: Partial<Container
 	if ("parentElement" in options) parentElement = options.parentElement;
 	else if ("nextElement" in options) parentElement = options.nextElement.parentElement!;
 	else if ("previousElement" in options) parentElement = options.previousElement.parentElement!;
-	else parentElement = document.querySelector(".content-wrapper")!;
+	else parentElement = findElement(".content-wrapper");
 
 	if ("nextElement" in options) parentElement.insertBefore(container, options.nextElement);
 	else if ("previousElement" in options) parentElement.insertBefore(container, options.previousElement.nextSibling);
 	else parentElement.appendChild(container);
 
-	return { container, content: container.querySelector(":scope > main")!, options: container.querySelector(".options")!, collapsed };
+	if (options.onlyHeader) {
+		return { container, options: findElement(".options", container), collapsed };
+	}
+	if (!options.showHeader) {
+		return { container, content: findElement(":scope > main", container), collapsed };
+	}
+
+	return { container, content: findElement(":scope > main", container), options: findElement(".options", container), collapsed };
 
 	function _createContainer(title: string, options: ContainerOptions) {
-		document.querySelector(`#${options.id}`)?.remove();
+		findElement(`#${options.id}`, true)?.remove();
 
 		const containerClasses = ["tt-container"];
 		if (options.collapsible) containerClasses.push("collapsible");
@@ -110,18 +130,18 @@ export function createContainer(title: string, partialOptions: Partial<Container
 			container.appendChild(elementBuilder({ type: "main", class: mainClasses }));
 		}
 
-		if (options.collapsible) {
-			container.querySelector(".title")!.addEventListener("click", async () => {
-				container.querySelector(".title")!.classList.toggle("collapsed");
+		if (options.collapsible && options.showHeader) {
+			findElement(".title", container).addEventListener("click", async () => {
+				findElement(".title", container).classList.toggle("collapsed");
 
-				await ttStorage.change({ filters: { containers: { [options.id]: container.querySelector(".title")!.classList.contains("collapsed") } } });
+				await ttStorage.change({ filters: { containers: { [options.id]: findElement(".title", container).classList.contains("collapsed") } } });
 			});
 		}
 		if (options.allowDragging) {
-			const content = container.querySelector<HTMLElement>(":scope > main")!;
+			const content = findElement(":scope > main", container);
 			content.addEventListener("dragover", (event) => event.preventDefault());
 			content.addEventListener("drop", (event) => {
-				if (content.querySelector(".temp.item, .temp.quick-item")) content.querySelector(".temp.item, .temp.quick-item")!.classList.remove("temp");
+				if (findElement(".temp.item, .temp.quick-item", content, true)) findElement(".temp.item, .temp.quick-item", content).classList.remove("temp");
 
 				// Firefox opens new tab when dropping item
 				event.preventDefault();
@@ -147,10 +167,10 @@ export function findContainer(title: string, partialOptions: Partial<FindContain
 
 	if (!options.id) return null;
 
-	const container = document.querySelector<HTMLElement>(`#${options.id}`);
+	const container = findElement(`#${options.id}`, true);
 	if (!container) return null;
 
-	if (options.selector) return container.querySelector(options.selector);
+	if (options.selector) return findElement(options.selector, container, true);
 	else return container;
 }
 

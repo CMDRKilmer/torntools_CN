@@ -1,5 +1,5 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
+import { findElement } from "@common/utils/functions/find-elements";
 import { formatTime } from "@common/utils/functions/formatting";
 import { addFetchListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
@@ -7,8 +7,6 @@ import { Feature } from "@features/feature";
 
 function initialiseMiniProfile() {
 	addFetchListener(async (event) => {
-		if (!FEATURE_MANAGER.isEnabled(MiniProfileLastActionFeature)) return;
-
 		const {
 			page,
 			json,
@@ -27,7 +25,7 @@ function initialiseMiniProfile() {
 async function showInformation(information: any) {
 	if (Number.isNaN(information.user.lastAction.seconds)) return;
 
-	const miniProfile = document.querySelector("#profile-mini-root .mini-profile-wrapper");
+	const miniProfile = findElement("#profile-mini-root .mini-profile-wrapper");
 	const lastAction = formatTime({ seconds: information.user.lastAction.seconds }, { type: "wordTimer", showDays: true });
 
 	const lastActionDescription = await requireElement(".last-action-desc", { parent: miniProfile });

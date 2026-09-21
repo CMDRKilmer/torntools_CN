@@ -279,6 +279,7 @@ export const DEFAULT_STORAGE = {
 			},
 			items: {
 				quickItems: new DefaultSetting("boolean", true),
+				highlightQuickItemBloodBags: new DefaultSetting("boolean", true),
 				values: new DefaultSetting("boolean", true),
 				drugDetails: new DefaultSetting("boolean", true),
 				marketLinks: new DefaultSetting("boolean", false),
@@ -431,6 +432,8 @@ export const DEFAULT_STORAGE = {
 				totalChallengeContributions: new DefaultSetting("boolean", true),
 				memberRevives: new DefaultSetting("boolean", true),
 				warReportHighlight: new DefaultSetting("boolean", true),
+				ocWeights: new DefaultSetting("boolean", true),
+				submitScenarios: new DefaultSetting("boolean", false),
 			},
 			property: {
 				filter: new DefaultSetting("boolean", true),
@@ -496,6 +499,9 @@ export const DEFAULT_STORAGE = {
 			crimes2: {
 				value: new DefaultSetting("boolean", true),
 			},
+			elimination: {
+				filter: new DefaultSetting("boolean", false),
+			},
 		},
 		scripts: {
 			noConfirm: {
@@ -511,8 +517,9 @@ export const DEFAULT_STORAGE = {
 				completed: new DefaultSetting("boolean", false),
 			},
 			reminders: {
-				finished: new DefaultSetting("boolean", false),
 				show: new DefaultSetting("boolean", true),
+				finished: new DefaultSetting("boolean", false),
+				ignored: new DefaultSetting("boolean", false),
 				types: {
 					energyRefill: new DefaultSetting("boolean", true),
 					nerveRefill: new DefaultSetting("boolean", true),
@@ -569,6 +576,7 @@ export const DEFAULT_STORAGE = {
 			tornw3b: new DefaultSetting("boolean", false),
 			ffScouter: new DefaultSetting("boolean", false),
 			tornintel: new DefaultSetting("boolean", false),
+			tornprobability: new DefaultSetting("boolean", false),
 			playgroundTorntools: new DefaultSetting("boolean", false),
 		},
 		servicePreferences: {
@@ -734,8 +742,8 @@ export const DEFAULT_STORAGE = {
 				other: new DefaultSetting<SpecialFilterValue>("string", "both"),
 			},
 			estimates: new DefaultSetting<string[]>("array", []),
-			ffScoreMax: new DefaultSetting("number", null),
-			ffScoreMin: new DefaultSetting("number", null),
+			ffScoreMax: new DefaultSetting<number>("number", null),
+			ffScoreMin: new DefaultSetting<number>("number", null),
 		},
 		stocks: {
 			enabled: new DefaultSetting("boolean", true),
@@ -768,8 +776,8 @@ export const DEFAULT_STORAGE = {
 				isDonator: new DefaultSetting<SpecialFilterValue>("string", "both"),
 				isRecruit: new DefaultSetting<SpecialFilterValue>("string", "both"),
 			},
-			ffScoreMax: new DefaultSetting("number", null),
-			ffScoreMin: new DefaultSetting("number", null),
+			ffScoreMax: new DefaultSetting<number>("number", null),
+			ffScoreMin: new DefaultSetting<number>("number", null),
 			revivable: new DefaultSetting<string[]>("array", []),
 		},
 		factionArmory: {
@@ -794,16 +802,21 @@ export const DEFAULT_STORAGE = {
 			temporary: {
 				name: new DefaultSetting("string", ""),
 			},
+			utilities: {
+				name: new DefaultSetting("string", ""),
+			},
 		},
 		factionRankedWar: {
 			enabled: new DefaultSetting("boolean", true),
 			activity: new DefaultSetting<string[]>("array", []),
 			status: new DefaultSetting<string[]>("array", []),
+			name: new DefaultSetting<string>("string", ""),
 			levelStart: new DefaultSetting("number", 1),
 			levelEnd: new DefaultSetting("number", 100),
+			side: new DefaultSetting("string", "both"),
 			estimates: new DefaultSetting<string[]>("array", []),
-			ffScoreMax: new DefaultSetting("number", null),
-			ffScoreMin: new DefaultSetting("number", null),
+			ffScoreMax: new DefaultSetting<number>("number", null),
+			ffScoreMin: new DefaultSetting<number>("number", null),
 		},
 		profile: {
 			relative: new DefaultSetting("boolean", false),
@@ -849,8 +862,8 @@ export const DEFAULT_STORAGE = {
 			levelStart: new DefaultSetting("number", 0),
 			levelEnd: new DefaultSetting("number", 100),
 			estimates: new DefaultSetting<string[]>("array", []),
-			ffScoreMax: new DefaultSetting("number", null),
-			ffScoreMin: new DefaultSetting("number", null),
+			ffScoreMax: new DefaultSetting<number>("number", null),
+			ffScoreMin: new DefaultSetting<number>("number", null),
 		},
 		friends: {
 			enabled: new DefaultSetting("boolean", true),
@@ -864,8 +877,16 @@ export const DEFAULT_STORAGE = {
 			levelStart: new DefaultSetting("number", 0),
 			levelEnd: new DefaultSetting("number", 100),
 			estimates: new DefaultSetting<string[]>("array", []),
-			ffScoreMax: new DefaultSetting("number", null),
-			ffScoreMin: new DefaultSetting("number", null),
+			ffScoreMax: new DefaultSetting<number>("number", null),
+			ffScoreMin: new DefaultSetting<number>("number", null),
+		},
+		elimination: {
+			enabled: new DefaultSetting("boolean", true),
+			activity: new DefaultSetting<string[]>("array", []),
+			levelStart: new DefaultSetting("number", 0),
+			levelEnd: new DefaultSetting("number", 100),
+			ffScoreMax: new DefaultSetting<number>("number", null),
+			ffScoreMin: new DefaultSetting<number>("number", null),
 		},
 		oc2: {
 			enabled: new DefaultSetting("boolean", true),

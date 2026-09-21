@@ -1,7 +1,7 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus, isAbroad } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -12,8 +12,6 @@ let triggerFilter: number | undefined;
 
 function registerListeners() {
 	addCustomListener(EVENT_CHANNELS.FILTER_APPLIED, () => {
-		if (!FEATURE_MANAGER.isEnabled(StatsEstimateAbroadFeature)) return;
-
 		if (triggerFilter) clearTimeout(triggerFilter);
 		triggerFilter = setTimeout(showEstimates, 500);
 	});
@@ -21,7 +19,7 @@ function registerListeners() {
 
 async function startFeature() {
 	if (settings.pages.travel.peopleFilter) {
-		const list = document.querySelector(".user-info-list-wrap");
+		const list = findElement(".user-info-list-wrap", true);
 		if (!list) return;
 	}
 
@@ -35,8 +33,8 @@ async function showEstimates() {
 	statsEstimate.showEstimates(
 		".users-list > li",
 		(row) => ({
-			id: parseInt(row.querySelector<HTMLAnchorElement>(".user.name[href*='profiles.php']").href.match(/(?<=XID=).*/)[0]),
-			level: parseInt(row.querySelector(".level").textContent),
+			id: parseInt(findElement<HTMLAnchorElement>(".user.name[href*='profiles.php']", row).href.match(/(?<=XID=).*/)![0]),
+			level: parseInt(findElement(".level", row).textContent),
 		}),
 		{ hasFilter: true },
 	);

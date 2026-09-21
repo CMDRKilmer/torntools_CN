@@ -1,4 +1,5 @@
 import { filters, settings } from "@common/utils/data/database";
+import { findElement } from "@common/utils/functions/find-elements";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { toRecord } from "@common/utils/functions/utilities";
 import { Feature } from "@features/feature";
@@ -14,10 +15,10 @@ import type { StatsWatcher } from "./stats-watcher";
 import { createStatsWatcher } from "./stats-watcher";
 
 function createGymContentManager(gymsDataFn: () => SpecialGymsCalcResult) {
-	const propertiesContainer = document.querySelector('[class*="gymContent___"] > [class*="properties___"]');
+	const propertiesContainer = findElement('[class*="gymContent___"] > [class*="properties___"]');
 	const areasElementsMap = toRecord(battleStats, (statName) => [
 		statName,
-		propertiesContainer.querySelector(`[class*="${statName.toLowerCase()}___"] > [class*="propertyContent___"]`),
+		findElement(`[class*="${statName.toLowerCase()}___"] > [class*="propertyContent___"]`, propertiesContainer),
 	]);
 
 	let statInfoComponentsMap: Partial<Record<BattleStat, unknown>> = {};
@@ -40,7 +41,7 @@ function createGymContentManager(gymsDataFn: () => SpecialGymsCalcResult) {
 			const component = statInfoComponentsMap[statName];
 
 			if (component) {
-				unmount(component);
+				void unmount(component);
 			}
 		}
 
@@ -54,13 +55,13 @@ type GymContentManager = ReturnType<typeof createGymContentManager>;
 
 let specialGymsInfo: unknown;
 let statsWatcher: StatsWatcher;
-let gymContentManager: GymContentManager;
+let gymContentManager: GymContentManager | undefined;
 
 async function startFeature() {
 	let selectedSpecialGym1 = $state(filters.gym.specialist1 as SpecialGym | "none");
 	let selectedSpecialGym2 = $state(filters.gym.specialist2 as SpecialGym | "none");
-	let stats = $state<Record<BattleStat, number>>(undefined);
-	let gymsData = $derived.by(() => calculateSpecialGymsData(stats, selectedSpecialGym1, selectedSpecialGym2));
+	let stats = $state<Record<BattleStat, number> | undefined>(undefined);
+	let gymsData = $derived.by(() => (stats ? calculateSpecialGymsData(stats, selectedSpecialGym1, selectedSpecialGym2) : undefined));
 
 	statsWatcher = createStatsWatcher();
 
@@ -68,11 +69,12 @@ async function startFeature() {
 		if (statsExist) {
 			stats = statsWatcher.readStats();
 
-			if (!specialGymsInfo) {
-				const root = document.querySelector("#gymroot");
+			if (!specialGymsInfo && stats) {
+				const root = findElement("#gymroot");
+
 				specialGymsInfo = mount(SpecialistGymsBox, {
-					target: root.parentElement,
-					anchor: root.nextSibling,
+					target: root.parentElement!,
+					anchor: root.nextSibling ?? undefined,
 					props: {
 						stats,
 						get selectedSpecialGym1() {
@@ -88,16 +90,16 @@ async function startFeature() {
 							selectedSpecialGym2 = value;
 						},
 						get gymsData() {
-							return gymsData;
+							return gymsData!;
 						},
 					},
 				});
 			}
 
-			gymContentManager = gymContentManager ?? createGymContentManager(() => gymsData);
+			gymContentManager = gymContentManager ?? createGymContentManager(() => gymsData!);
 		} else {
-			unmount(specialGymsInfo);
-			gymContentManager.dispose();
+			unmount(specialGymsInfo as Parameters<typeof unmount>[0]);
+			gymContentManager?.dispose();
 			specialGymsInfo = undefined;
 			gymContentManager = undefined;
 		}

@@ -1,7 +1,7 @@
 import "./item-market-fill-max.css";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { mobile, tablet } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus, updateReactInput } from "@common/utils/functions/torn";
@@ -12,19 +12,18 @@ function addListener() {
 		const target = event.target as Element;
 		if (!target?.matches("[class*='rowWrapper__'] [class*='available__']")) return;
 
-		if (!FEATURE_MANAGER.isEnabled(ItemMarketFillMaxFeature)) return;
+		const listing = target.closest("li")!;
 
-		const listing = target.closest("li");
 		// The purchase amount input is not visible in mobiles and tablets until
 		// the Buy icon is clicked. Hence exit early.
 		if ((mobile || tablet) && !listing.children[0].matches("[class*='sellerRow__'][class*='expanded__']")) return;
 
-		const quantityAvailable = convertToNumber(listing.querySelector("[class*='available__']").textContent);
-		const moneyOnHand = convertToNumber(document.querySelector<HTMLElement>("#user-money").dataset.money);
-		const itemPrice = convertToNumber(listing.querySelector("[class*='price__']").textContent);
+		const quantityAvailable = convertToNumber(findElement("[class*='available__']", listing).textContent);
+		const moneyOnHand = convertToNumber(findElement("#user-money").dataset.money);
+		const itemPrice = convertToNumber(findElement("[class*='price__']", listing).textContent);
 		const purchasableQuantity = Math.min(quantityAvailable, Math.floor(moneyOnHand / itemPrice));
 
-		const quantityInput = listing.querySelector<HTMLInputElement>(".input-money-group input:not([type])");
+		const quantityInput = findElement<HTMLInputElement>(".input-money-group input:not([type])", listing);
 		updateReactInput(quantityInput, purchasableQuantity);
 	});
 }

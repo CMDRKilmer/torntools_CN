@@ -3,6 +3,7 @@ import { settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber, dropDecimals } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
@@ -14,15 +15,11 @@ interface SteadfastBonus {
 }
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.GYM_LOAD, async () => {
-		if (!settings.pages.gym.steadfast) return;
-
-		await showSteadfast();
-	});
+	addCustomListener(EVENT_CHANNELS.GYM_LOAD, showSteadfast);
 }
 
 async function showSteadfast() {
-	const properties = (await requireElement("#gymroot ul[class*='properties___'] [class*='strength___']")).closest("#gymroot ul[class*='properties___']");
+	const properties = (await requireElement("#gymroot ul[class*='properties___'] [class*='strength___']")).closest("#gymroot ul[class*='properties___']")!;
 
 	const factionPerks = userdata.perks.faction.filter((perk) => perk.includes("gym gains"));
 	const jobPerks = userdata.perks.job.filter((perk) => perk.includes("gym gains"));
@@ -78,11 +75,11 @@ async function showSteadfast() {
 	for (const [stat, perks] of Object.entries(bonus)) {
 		if (perks.length < 1) continue;
 
-		const box = properties.querySelector(`[class*='${stat}___']`);
-		if (box.querySelector(".tt-gym-steadfast")) continue;
+		const box = findElement(`[class*='${stat}___']`, properties);
+		if (findElement(".tt-gym-steadfast", box, true)) continue;
 
 		const parent = elementBuilder({ type: "div", class: "tt-gym-steadfast", style: { height: `${maxBonus * 12}px` } });
-		box.insertBefore(parent, box.firstElementChild);
+		box.insertBefore(parent, box.firstElementChild!);
 
 		for (const perk of perks) {
 			let title: string;

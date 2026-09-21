@@ -4,6 +4,7 @@ import type { TornInternalUseItemSuccess } from "@common/pages/item-page";
 import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements.ts";
 import { convertToNumber, formatNumber } from "@common/utils/functions/formatting";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
@@ -20,14 +21,14 @@ function addListener() {
 	let itemID: number | undefined;
 
 	addXHRListener(async ({ detail: { xhr, json } }) => {
-		if (!FEATURE_MANAGER.isEnabled(OpenedSupplyPackValueFeature)) return;
-
 		const params = new URLSearchParams(xhr.requestBody);
-		if (!isUseItem(params.get("step"), json) || !json.success) return;
+		if (!isUseItem(params.get("step")!, json) || !json.success) return;
 
 		if (json?.itemID) itemID = parseInt(json.itemID);
 		else if (params.has("id")) itemID = convertToNumber(params.get("id"));
 		else if (params.has("itemID")) itemID = convertToNumber(params.get("itemID"));
+
+		if (itemID === undefined) return;
 
 		if (shouldDisplayOpenedValue(itemID)) {
 			reqXID = (await requireElement<HTMLInputElement>(`[data-item="${itemID}"] .pack-open-msg input[type="hidden"]`)).value;
@@ -35,6 +36,7 @@ function addListener() {
 
 		if ((params.get("XID") === reqXID || isDrugPackUseRequest(params) || SUPPLY_PACK_ITEMS.includes(itemID)) && json.items?.itemAppear) {
 			const totalOpenedValue = calculateValueFromResponse(json);
+			if (totalOpenedValue === null) return;
 
 			await showTotalValue(totalOpenedValue, itemID);
 		}
@@ -46,7 +48,9 @@ function calculateValueFromResponse(response: TornInternalUseItemSuccess): numbe
 
 	return response.items.itemAppear
 		.map((item) =>
-			"isMoney" in item ? convertToNumber(item.moneyGain.slice(1)) : ITEM_RESOLVER.getFullItem(parseInt(item.ID)).value.market_price * parseInt(item.qty),
+			"isMoney" in item
+				? convertToNumber(item.moneyGain.slice(1))
+				: (ITEM_RESOLVER.getFullItem(parseInt(item.ID))?.value.market_price ?? 0) * parseInt(item.qty),
 		)
 		.reduce((totalValue, value) => totalValue + value, 0);
 }
@@ -96,7 +100,7 @@ function isDrugPackUseRequest(params: URLSearchParams) {
 }
 
 function removeTotalValueElement() {
-	document.getElementById("ttOpenedValueText")?.remove();
+	findElement("#ttOpenedValueText", true)?.remove();
 }
 
 export default class OpenedSupplyPackValueFeature extends Feature {

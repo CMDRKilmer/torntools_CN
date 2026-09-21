@@ -1,6 +1,7 @@
 import { settings, storageListeners } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
-import { checkDevice, findElementWithText } from "@common/utils/functions/dom";
+import { checkDevice } from "@common/utils/functions/dom";
+import { findElement, findElementWithText } from "@common/utils/functions/find-elements";
 import { requireSidebar } from "@common/utils/functions/requires";
 import { isPageWithSidebar } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -13,6 +14,7 @@ export interface ResolvedReminder {
 	group?: string;
 	url?: string;
 	finished: boolean;
+	ignored?: boolean;
 }
 
 function resolveReminders(): ResolvedReminder[] {
@@ -22,11 +24,15 @@ function resolveReminders(): ResolvedReminder[] {
 		const finished = reminder.finished();
 		if (!settings.scripts.reminders.finished && finished) return null;
 
+		const ignored = reminder.ignored?.();
+		if (!settings.scripts.reminders.ignored && ignored) return null;
+
 		return {
 			name: reminder.name,
 			group: reminder.group,
 			url: reminder.url,
 			finished,
+			ignored,
 		};
 	})
 		.filter((r) => r !== null)
@@ -49,12 +55,11 @@ async function startFeature() {
 
 	await requireSidebar();
 
-	const previousElement =
-		findElementWithText("h2", "Areas")!.closest("[class*='sidebar-block_']") ?? document.querySelector("#sidebar [class*='userInformation___']")!;
+	const previousElement = findElementWithText("h2", "Areas").closest("[class*='sidebar-block_']") ?? findElement("#sidebar [class*='userInformation___']");
 
 	remindersBox = mount(RemindersBox, {
 		target: previousElement.parentElement!,
-		anchor: previousElement.nextSibling,
+		anchor: previousElement.nextSibling!,
 		props: {
 			get reminders() {
 				return reminders;

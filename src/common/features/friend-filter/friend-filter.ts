@@ -1,9 +1,10 @@
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { isElement } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
 import { createFilter, presetSection, sliderSection } from "@common/utils/functions/filters";
 import type { FilterController, SliderRange } from "@common/utils/functions/filters";
+import { findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
@@ -18,22 +19,14 @@ type FriendFilterState = { enabled: boolean; activity: string[]; level: SliderRa
 
 async function initialiseListeners() {
 	listObserver = new MutationObserver((mutations) => {
-		if (
-			mutations.some((m) => Array.from(m.addedNodes).some((n) => isElement(n) && n.matches("li[class*='tableRow__']"))) &&
-			filterSetupComplete &&
-			FEATURE_MANAGER.isEnabled(FriendFilterFeature)
-		) {
+		if (mutations.some((m) => Array.from(m.addedNodes).some((n) => isElement(n) && n.matches("li[class*='tableRow__']"))) && filterSetupComplete) {
 			void filter?.run();
 		}
 	});
 	tableObserver = new MutationObserver((mutations) => {
-		if (
-			mutations.some((m) => Array.from(m.addedNodes).some((n) => isElement(n) && n.tagName === "UL")) &&
-			filterSetupComplete &&
-			FEATURE_MANAGER.isEnabled(FriendFilterFeature)
-		) {
+		if (mutations.some((m) => Array.from(m.addedNodes).some((n) => isElement(n) && n.tagName === "UL")) && filterSetupComplete) {
 			void filter?.run();
-			listObserver.observe(document.querySelector(".tableWrapper > ul"), { childList: true });
+			listObserver.observe(findElement(".tableWrapper > ul"), { childList: true });
 		}
 	});
 	tableObserver.observe(await requireElement(".tableWrapper"), { childList: true });
@@ -57,7 +50,7 @@ async function addFilterContainer() {
 				defaults: { low: filters.friends.levelStart, high: filters.friends.levelEnd },
 				formatCounter: (r) => `Level ${r.start} - ${r.end}`,
 				test: (row, range) => {
-					const level = convertToNumber(row.querySelector("[class*='level__']").textContent);
+					const level = convertToNumber(findElement("[class*='level__']", row).textContent);
 
 					if (range.start && level < range.start) return false;
 					if (range.end !== 100 && level > range.end) return false;

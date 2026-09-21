@@ -1,8 +1,9 @@
 import "./highlight-cheap-items.css";
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { findAllElements, getHashParameters } from "@common/utils/functions/dom";
+import { getHashParameters } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber } from "@common/utils/functions/formatting";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { BACKGROUND_SERVICE } from "@extension/services/proxy-services";
@@ -16,28 +17,12 @@ interface ItemEntry {
 
 function initialiseListeners() {
 	addCustomListener(EVENT_CHANNELS.ITEMMARKET_CATEGORY_ITEMS, ({ list }) => {
-		if (!FEATURE_MANAGER.isEnabled(HighlightCheapItemsFeature)) return;
-
 		highlightItems(findAllElements("[class*='itemList___'] > li:not(.tt-highlight-modified)", list));
 	});
-	addCustomListener(EVENT_CHANNELS.ITEMMARKET_CATEGORY_ITEMS_UPDATE, ({ item }) => {
-		if (!FEATURE_MANAGER.isEnabled(HighlightCheapItemsFeature)) return;
-
-		highlightItems([item]);
-	});
-	addCustomListener(EVENT_CHANNELS.ITEMMARKET_ITEMS, ({ item, list }) => {
-		if (!FEATURE_MANAGER.isEnabled(HighlightCheapItemsFeature)) return;
-
-		highlightSellers(item, list, false);
-	});
-	addCustomListener(EVENT_CHANNELS.ITEMMARKET_ITEMS_UPDATE, ({ item, list }) => {
-		if (!FEATURE_MANAGER.isEnabled(HighlightCheapItemsFeature)) return;
-
-		highlightSellers(item, list, true);
-	});
+	addCustomListener(EVENT_CHANNELS.ITEMMARKET_CATEGORY_ITEMS_UPDATE, ({ item }) => highlightItems([item]));
+	addCustomListener(EVENT_CHANNELS.ITEMMARKET_ITEMS, ({ item, list }) => highlightSellers(item, list, false));
+	addCustomListener(EVENT_CHANNELS.ITEMMARKET_ITEMS_UPDATE, ({ item, list }) => highlightSellers(item, list, true));
 	addCustomListener(EVENT_CHANNELS.WINDOW__FOCUS, () => {
-		if (!FEATURE_MANAGER.isEnabled(HighlightCheapItemsFeature)) return;
-
 		removeHighlights();
 		highlightEverything();
 	});
@@ -46,34 +31,37 @@ function initialiseListeners() {
 function highlightEverything() {
 	const categoryItems = findAllElements("[class*='itemList___'] > li:not(.tt-highlight-modified)")
 		.map<ItemEntry | null>((element) => {
-			const image = element.querySelector<HTMLImageElement>("img.torn-item");
+			const image = findElement<HTMLImageElement>("img.torn-item", element, true);
 			if (!image) return null;
 
 			return {
 				element,
 				id: convertToNumber(image.src),
-				price: convertToNumber(element.querySelector("[class*='priceAndTotal'] > span").textContent),
+				price: convertToNumber(findElement("[class*='priceAndTotal'] > span", element).textContent),
 			};
 		})
-		.filter((item) => item?.element);
+		.filter((item) => item !== null);
 
 	handleCategoryItems(categoryItems);
 
 	let id: number | undefined;
 	const params = getHashParameters();
 	if (params.has("itemID")) {
-		id = parseInt(params.get("itemID"));
-	} else if (document.querySelector("[class*='sellerListWrapper___']")) {
-		const image = document.querySelector("[class*='sellerListWrapper___']").previousElementSibling.querySelector<HTMLImageElement>("img.torn-item");
-		if (!image) return;
+		id = parseInt(params.get("itemID")!);
+	} else {
+		const wrapper = findElement("[class*='sellerListWrapper___']", true);
+		if (wrapper?.previousElementSibling) {
+			const image = findElement<HTMLImageElement>("img.torn-item", wrapper.previousElementSibling, true);
+			if (!image) return;
 
-		id = convertToNumber(image.src);
+			id = convertToNumber(image.src);
+		}
 	}
 
 	if (id !== undefined) {
 		const itemSellers = findAllElements("[class*='rowWrapper___']:not(.tt-highlight-modified)")
-			.map<ItemEntry>((element) => {
-				const priceElement = element.querySelector("[class*='price___']");
+			.map<ItemEntry | null>((element) => {
+				const priceElement = findElement("[class*='price___']", element, true);
 				if (!priceElement) return null;
 
 				return {
@@ -82,16 +70,16 @@ function highlightEverything() {
 					id,
 				};
 			})
-			.filter((item) => !!item);
+			.filter((item) => item !== null);
 
 		handleItemSellers(id, itemSellers);
 	}
 
 	if (params.has("itemID")) {
-		const id = parseInt(params.get("itemID"));
+		const id = parseInt(params.get("itemID")!);
 		const itemSellers = findAllElements("[class*='rowWrapper___']:not(.tt-highlight-modified)")
-			.map<ItemEntry>((element) => {
-				const priceElement = element.querySelector("[class*='price___']");
+			.map<ItemEntry | null>((element) => {
+				const priceElement = findElement("[class*='price___']", element, true);
 				if (!priceElement) return null;
 
 				return {
@@ -100,7 +88,7 @@ function highlightEverything() {
 					id,
 				};
 			})
-			.filter((item) => !!item);
+			.filter((item) => item !== null);
 
 		handleItemSellers(id, itemSellers);
 	}
@@ -109,10 +97,10 @@ function highlightEverything() {
 function highlightItems(items: Element[]) {
 	const itemEntries = items
 		.map<ItemEntry | null>((element) => {
-			const image = element.querySelector<HTMLImageElement>("img.torn-item");
+			const image = findElement<HTMLImageElement>("img.torn-item", element, true);
 			if (!image) return null;
 
-			const priceElement = element.querySelector("[class*='priceAndTotal'] > span");
+			const priceElement = findElement("[class*='priceAndTotal'] > span", element, true);
 			if (!priceElement) return null;
 
 			return {
@@ -121,7 +109,7 @@ function highlightItems(items: Element[]) {
 				price: convertToNumber(priceElement.textContent),
 			};
 		})
-		.filter((item) => item?.element);
+		.filter((item) => item !== null);
 
 	handleCategoryItems(itemEntries);
 }
@@ -131,10 +119,10 @@ function highlightSellers(item: number, list: Element, includeModified: boolean)
 		`[class*='rowWrapper___']${includeModified ? "" : ":not(.tt-highlight-modified)"},[class*='sellerRow___']:not(:first-child)${includeModified ? "" : ":not(.tt-highlight-modified)"}`,
 		list,
 	)
-		.filter((element) => !!element.querySelector("[class*='price___']"))
+		.filter((element) => !!findElement("[class*='price___']", element, true))
 		.map<ItemEntry>((element) => ({
 			element,
-			price: convertToNumber(element.querySelector("[class*='price___']").textContent),
+			price: convertToNumber(findElement("[class*='price___']", element).textContent),
 			id: item,
 		}));
 

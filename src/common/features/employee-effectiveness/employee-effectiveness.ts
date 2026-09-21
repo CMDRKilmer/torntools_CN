@@ -1,9 +1,9 @@
 import "./employee-effectiveness.css";
 import { isOwnCompany } from "@common/pages/company-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { findAllElements, getHashParameters } from "@common/utils/functions/dom";
+import { getHashParameters, isElement } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -11,11 +11,7 @@ import { Feature } from "@features/feature";
 let observer: MutationObserver | undefined;
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.COMPANY_EMPLOYEES_PAGE, async () => {
-		if (!FEATURE_MANAGER.isEnabled(EmployeeEffectivenessFeature)) return;
-
-		await showEffectiveness();
-	});
+	addCustomListener(EVENT_CHANNELS.COMPANY_EMPLOYEES_PAGE, showEffectiveness);
 }
 
 async function startFeature() {
@@ -25,7 +21,9 @@ async function startFeature() {
 
 	observer = new MutationObserver((mutations) => {
 		const firstAdditionMutation = mutations.find((x) => x.addedNodes.length);
-		if ((firstAdditionMutation.target as Element).matches("#employees.employees")) showEffectiveness();
+		if (!isElement(firstAdditionMutation?.target)) return;
+
+		if (firstAdditionMutation.target.matches("#employees.employees")) showEffectiveness();
 	});
 	observer.observe(await requireElement(".company-wrap > .manage-company"), { childList: true, subtree: true });
 }
@@ -36,10 +34,10 @@ async function showEffectiveness() {
 	const list = await requireElement(".employee-list");
 
 	for (const row of findAllElements(".effectiveness[data-multipliers]", list)) {
-		const multipliers: number[] = JSON.parse(row.dataset.multipliers) || [];
+		const multipliers: number[] = JSON.parse(row.dataset.multipliers!) || [];
 		const reduction = multipliers.filter((multiplier) => multiplier < 0).reduce((a, b) => a + b, 0) * -1;
 
-		const element = row.querySelector(".effectiveness-value");
+		const element = findElement(".effectiveness-value", row);
 
 		if (reduction < settings.pages.companies.employeeEffectiveness) {
 			element.classList.remove("tt-employee-effectiveness"); // Live reload

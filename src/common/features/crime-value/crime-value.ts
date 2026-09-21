@@ -1,9 +1,10 @@
 import "./crime-value.css";
 import { isAttemptCrime } from "@common/pages/crimes2-page";
 import type { TornInternalAttemptCrime } from "@common/pages/crimes2-page";
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
+import { findAllElements } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { addFetchListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
@@ -11,12 +12,11 @@ import { Feature } from "@features/feature";
 
 function addListener() {
 	addFetchListener(async ({ detail: { page, json, fetch } }) => {
-		if (!FEATURE_MANAGER.isEnabled(CrimeValueFeature)) return;
 		if (page !== "page" || !json) return;
 
 		const params = new URL(fetch.url).searchParams;
-		const sid = params.get("sid");
-		const step = params.get("step");
+		const sid = params.get("sid")!;
+		const step = params.get("step")!;
 
 		if (!isAttemptCrime(sid, step, json)) return;
 
@@ -37,7 +37,7 @@ function calculateValue(response: TornInternalAttemptCrime): number {
 		.filter(({ type }) => type === "items" || type === "money")
 		.map((reward) => {
 			if (reward.type === "items") {
-				return reward.value.map(({ id, amount }) => ITEM_RESOLVER.getFullItem(id)?.value.market_price * amount).reduce((a, b) => a + b, 0);
+				return reward.value.map(({ id, amount }) => (ITEM_RESOLVER.getFullItem(id)?.value.market_price ?? 0) * amount).reduce((a, b) => a + b, 0);
 			} else if (reward.type === "money") {
 				return reward.value;
 			} else {

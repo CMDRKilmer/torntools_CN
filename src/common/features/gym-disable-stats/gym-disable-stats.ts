@@ -1,8 +1,9 @@
 import "./gym-disable-stats.css";
 import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements, isElement } from "@common/utils/functions/dom";
+import { elementBuilder, isElement } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { sleep } from "@common/utils/functions/utilities";
@@ -11,18 +12,14 @@ import { Feature } from "@features/feature";
 const GYM_STATS = ["strength", "speed", "dexterity", "defense"] as const;
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.GYM_LOAD, async () => {
-		if (!settings.pages.gym.disableStats) return;
-
-		await showCheckboxes();
-	});
+	addCustomListener(EVENT_CHANNELS.GYM_LOAD, showCheckboxes);
 
 	const gymTrainObserver = new MutationObserver((mutations) => {
 		if (!settings.pages.gym.disableStats) return;
 
 		for (const mutation of mutations) {
 			const target = mutation.target as Element;
-			const checkbox = target.querySelector<HTMLInputElement>(".tt-stat-checkbox");
+			const checkbox = findElement<HTMLInputElement>(".tt-stat-checkbox", target, true);
 			if (!checkbox) continue;
 
 			const classList = target.classList;
@@ -57,7 +54,7 @@ function initialiseListeners() {
 async function showCheckboxes() {
 	await sleep(10);
 
-	const properties = (await requireElement("#gymroot ul[class*='properties___'] [class*='strength___']")).closest("#gymroot ul[class*='properties___']");
+	const properties = (await requireElement("#gymroot ul[class*='properties___'] [class*='strength___']")).closest("#gymroot ul[class*='properties___']")!;
 
 	for (const stat of findAllElements(":scope > li:not([class*='locked___']):not(.tt-modified)", properties)) {
 		stat.classList.add("tt-modified");
@@ -81,8 +78,8 @@ async function showCheckboxes() {
 	}
 
 	function toggleStat(stat: Element, save = true) {
-		const checkbox = stat.querySelector<HTMLInputElement>(".tt-stat-checkbox");
-		const button = stat.querySelector<HTMLButtonElement>(".torn-btn");
+		const checkbox = findElement<HTMLInputElement>(".tt-stat-checkbox", stat);
+		const button = findElement<HTMLButtonElement>(".torn-btn", stat);
 
 		const isLocked = stat.classList.toggle("tt-gym-locked");
 

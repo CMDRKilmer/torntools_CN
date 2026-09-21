@@ -1,9 +1,10 @@
 import "./missing-sets.css";
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
-import { elementBuilder, findAllElements, mobile } from "@common/utils/functions/dom";
+import { elementBuilder, mobile } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { getPageStatus, SETS } from "@common/utils/functions/torn";
 import type { SetItem } from "@common/utils/functions/torn";
@@ -11,7 +12,7 @@ import { Feature } from "@features/feature";
 
 function initialiseFlowers() {
 	addCustomListener(EVENT_CHANNELS.ITEM_SWITCH_TAB, async ({ tab }) => {
-		if (!FEATURE_MANAGER.isEnabled(MissingFlowersFeature) || tab !== "Flower") {
+		if (tab !== "Flower") {
 			removeFlowers();
 			return;
 		}
@@ -19,8 +20,6 @@ function initialiseFlowers() {
 		await showFlowers();
 	});
 	addCustomListener(EVENT_CHANNELS.FEATURE_ENABLED, ({ name }) => {
-		if (!FEATURE_MANAGER.isEnabled(MissingFlowersFeature)) return;
-
 		if (name === "Item Values") showMarketValues();
 		else if (name === "Market Icons") showMarketIcons();
 	});
@@ -28,7 +27,7 @@ function initialiseFlowers() {
 
 function initialisePlushies() {
 	addCustomListener(EVENT_CHANNELS.ITEM_SWITCH_TAB, async ({ tab }) => {
-		if (!FEATURE_MANAGER.isEnabled(MissingPlushiesFeature) || tab !== "Plushie") {
+		if (tab !== "Plushie") {
 			removePlushies();
 			return;
 		}
@@ -36,8 +35,6 @@ function initialisePlushies() {
 		await showPlushies();
 	});
 	addCustomListener(EVENT_CHANNELS.FEATURE_ENABLED, ({ name }) => {
-		if (!FEATURE_MANAGER.isEnabled(MissingPlushiesFeature)) return;
-
 		if (name === "Item Values") showMarketValues();
 		else if (name === "Market Icons") showMarketIcons();
 	});
@@ -48,7 +45,7 @@ async function showFlowers() {
 }
 
 function removeFlowers() {
-	if (document.querySelector("#needed-flowers")) document.querySelector("#needed-flowers").remove();
+	findElement("#needed-flowers", true)?.remove();
 }
 
 async function showPlushies() {
@@ -56,16 +53,16 @@ async function showPlushies() {
 }
 
 function removePlushies() {
-	if (document.querySelector("#needed-plushies")) document.querySelector("#needed-plushies").remove();
+	findElement("#needed-plushies", true)?.remove();
 }
 
 async function show(id: string, selector: string, items: SetItem[]) {
-	if (document.querySelector(`#${id}`)) document.querySelector(`#${id}`).remove();
+	if (findElement(`#${id}`, true)) findElement(`#${id}`).remove();
 
 	const currentItemsElements = findAllElements(`#category-wrap > ${selector}[aria-expanded='true'] > li[data-item]`);
 	if (!currentItemsElements.length || currentItemsElements.length === items.length) return;
 
-	const currentItems = currentItemsElements.map((x) => parseInt(x.dataset.item));
+	const currentItems = currentItemsElements.map((x) => parseInt(x.dataset.item!));
 	const needed = items.filter((x) => !currentItems.some((y) => x.id === y)).sort((a, b) => a.name.localeCompare(b.name));
 	if (needed.length <= 0) return;
 
@@ -94,19 +91,22 @@ async function show(id: string, selector: string, items: SetItem[]) {
 
 		isFirst = false;
 	}
-	document.querySelector(".main-items-cont-wrap").insertAdjacentElement("afterend", wrapper);
+	findElement(".main-items-cont-wrap").insertAdjacentElement("afterend", wrapper);
 }
 
 function addItemValue(missingItem: HTMLElement) {
 	if (!settings.pages.items.values) return;
 	if (!hasAPIData()) return;
 
-	missingItem.querySelector(":scope > span").insertAdjacentElement(
+	const fullItem = ITEM_RESOLVER.getFullItem(parseInt(missingItem.dataset.id!));
+	if (!fullItem) return;
+
+	findElement(":scope > span", missingItem).insertAdjacentElement(
 		"afterend",
 		elementBuilder({
 			type: "span",
 			class: "tt-item-price",
-			text: formatNumber(ITEM_RESOLVER.getFullItem(parseInt(missingItem.dataset.id)).value.market_price, { currency: true }),
+			text: formatNumber(fullItem.value.market_price, { currency: true }),
 		}),
 	);
 }
@@ -120,16 +120,16 @@ function showMarketValues() {
 async function addMarketIcon(missingItem: HTMLElement, first: boolean, last: boolean) {
 	if (!settings.pages.items.marketLinks) return;
 	if (mobile) return;
-	if (missingItem.querySelector(".market-link")) return;
+	if (findElement(".market-link", missingItem, true)) return;
 
-	let parent = missingItem.querySelector(".outside-actions");
+	let parent = findElement(".outside-actions", missingItem, true);
 	if (!parent) {
 		parent = elementBuilder({ type: "div", class: `outside-actions ${first ? "first-action" : ""} ${last ? "last-action" : ""}` });
 
 		missingItem.appendChild(parent);
 	}
 
-	const id = parseInt(missingItem.dataset.id);
+	const id = parseInt(missingItem.dataset.id!);
 	const { name, category } = missingItem.dataset;
 
 	parent.appendChild(

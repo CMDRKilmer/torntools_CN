@@ -1,6 +1,6 @@
 import "./hide-level-upgrade.css";
 import { settings } from "@common/utils/data/database";
-import { findAllElements } from "@common/utils/functions/dom";
+import { findAllElements } from "@common/utils/functions/find-elements";
 import { requireContent, requireDOMInteractive } from "@common/utils/functions/requires";
 import { ExecutionTiming, Feature } from "@features/feature";
 
@@ -15,8 +15,8 @@ async function hideUpgrade() {
 	const infoRow = findAllElements(".info-msg li").find((li) => li.textContent.includes("Congratulations! You have enough experience to go up to level"));
 	if (!infoRow) return;
 
-	if (infoRow.parentElement.childElementCount > 1) infoRow.classList.add("tt-level-upgrade");
-	else infoRow.closest(".info-msg").classList.add("tt-level-upgrade");
+	if (infoRow.parentElement!.childElementCount > 1) infoRow.classList.add("tt-level-upgrade");
+	else infoRow.closest(".info-msg")!.classList.add("tt-level-upgrade");
 }
 
 export default class HideLevelUpgradeFeature extends Feature {

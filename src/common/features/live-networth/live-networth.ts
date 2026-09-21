@@ -2,7 +2,8 @@ import "./live-networth.css";
 import { settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { createContainer } from "@common/utils/functions/containers";
-import { elementBuilder, findElementWithText } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement, findElementWithText } from "@common/utils/functions/find-elements";
 import { formatNumber, formatTime } from "@common/utils/functions/formatting";
 import { requireContent } from "@common/utils/functions/requires";
 import { getPageStatus, isAbroad, isFlying } from "@common/utils/functions/torn";
@@ -121,7 +122,7 @@ async function showNetworth() {
 		showHeader: false,
 		applyRounding: false,
 		compact: true,
-		parentElement: findElementWithText("h5", "General Information").parentElement.nextElementSibling.querySelector("ul.info-cont-wrap"),
+		parentElement: findElement("ul.info-cont-wrap", findElementWithText("h5", "General Information").parentElement!.nextElementSibling!),
 	});
 	const networthRow = newRow("(Live) Networth", formatNumber(userdata.networth.total, { currency: true }));
 
@@ -129,20 +130,22 @@ async function showNetworth() {
 	const infoIcon = elementBuilder({
 		type: "i",
 		class: "networth-info-icon",
-		attributes: {
+		dataset: {
 			updatedAt: userdata.networth.timestamp,
+		},
+		attributes: {
 			title: `Last updated ${formatTime({ seconds: userdata.networth.timestamp }, { type: "ago" })}`,
 			style: "margin-left: 9px;",
 		},
 	});
-	networthRow.querySelector(".desc").appendChild(infoIcon);
+	findElement(".desc", networthRow).appendChild(infoIcon);
 	content.appendChild(networthRow);
 
 	// Update 'last updated'
 	setInterval(() => {
 		if (infoIcon.hasAttribute("aria-describedby")) return;
 
-		const updated = parseInt(infoIcon.getAttribute("updatedAt"));
+		const updated = parseInt(infoIcon.dataset.updatedAt!);
 
 		infoIcon.setAttribute("title", `Last updated: ${formatTime({ seconds: updated }, { type: "ago" })}`);
 	}, 1000);
@@ -158,7 +161,19 @@ async function showNetworth() {
 		],
 	});
 
+	let hasChanges = false;
+
 	NETWORTH_TYPES.forEach(addToTable);
+
+	if (!hasChanges) {
+		table.appendChild(
+			elementBuilder({
+				type: "tr",
+				class: "tt-networth-empty",
+				children: [elementBuilder({ type: "td", text: "No changes to show.", attributes: { colspan: "3" } })],
+			}),
+		);
+	}
 
 	content.appendChild(
 		elementBuilder({
@@ -190,7 +205,10 @@ async function showNetworth() {
 		const previous = type.snapshotGetter(userdata);
 		const current = type.liveGetter(userdata);
 
-		if (current === previous) return;
+		// oxlint-disable-next-line no-constant-condition -- debug: force the table to have no rows
+		if (current === previous || true) return;
+
+		hasChanges = true;
 
 		const isPositive = current > previous;
 

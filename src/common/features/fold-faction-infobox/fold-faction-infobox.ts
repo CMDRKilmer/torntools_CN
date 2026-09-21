@@ -1,41 +1,36 @@
 import "./fold-faction-infobox.css";
 import { getFactionSubpage, isDestroyed, isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { getSearchParameters } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { PHFillCaretDown, PHFillCaretRight } from "@common/utils/icons/phosphor-icons";
 import { Feature } from "@features/feature";
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.FACTION_INFO, async () => {
-		if (!FEATURE_MANAGER.isEnabled(FoldFactionInfoboxFeature)) return;
-
-		await foldInfobox();
-	});
-	addCustomListener(EVENT_CHANNELS.FACTION_MAIN, async () => {
-		if (!FEATURE_MANAGER.isEnabled(FoldFactionInfoboxFeature)) return;
-
-		await foldInfobox();
-	});
+	addCustomListener(EVENT_CHANNELS.FACTION_INFO, foldInfobox);
+	addCustomListener(EVENT_CHANNELS.FACTION_MAIN, foldInfobox);
 }
 
 async function startFeature() {
-	if (isInternalFaction && !document.querySelector(".faction-description, .members-list, .announcement")) return;
+	if (isInternalFaction && !findElement(".faction-description, .members-list, .announcement", true)) return;
 	if (!isInternalFaction && (await isDestroyed())) return;
 
 	await foldInfobox();
 }
 
 async function foldInfobox() {
-	let title: Element, description: Element, key: string;
+	let title: Element;
+	let description: Element | null;
+	let key: string;
 
 	if (isInternalFaction) {
 		if (getFactionSubpage() === "info") {
 			title = await requireElement(".faction-title");
-			description = document.querySelector(".faction-description");
+			description = findElement(".faction-description", true);
 			key = "faction_description_fold";
 		} else {
 			title = await requireElement("#faction-main [data-title='announcement'][role='heading']");
@@ -44,7 +39,7 @@ async function foldInfobox() {
 		}
 	} else {
 		title = await requireElement(".faction-title");
-		description = document.querySelector(".faction-description");
+		description = findElement(".faction-description", true);
 		key = "faction_description_fold";
 	}
 	if (!title || !description || !key) return;
@@ -65,7 +60,7 @@ async function foldInfobox() {
 	}
 
 	function fold(state: boolean | null) {
-		if (!FEATURE_MANAGER.isEnabled(FoldFactionInfoboxFeature)) return;
+		if (!description) return;
 
 		if (state === null) {
 			state = description.classList.toggle("folded");

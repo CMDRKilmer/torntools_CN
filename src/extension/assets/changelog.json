@@ -1,9 +1,80 @@
 [
 	{
-		"version": { "major": 9, "minor": 2, "build": 4 },
+		"version": { "major": 9, "minor": 3, "build": 1 },
 		"title": "Beta",
 		"date": false,
-		"logs": { "features": [], "fixes": [], "changes": [], "removed": [], "technical": [] }
+		"logs": {
+			"features": [
+				{ "message": "Show the OC2 role weight (requires the 'Torn Probability' connection).", "contributor": "DeKleineKobini" },
+				{
+					"message": "Submit the OC2 scenarios for analysis anonymously, (requires the 'Torn Probability' connection). Disabled by default.",
+					"contributor": "DeKleineKobini"
+				}
+			],
+			"fixes": [
+				{ "message": "Clearing the cache now also always takes the fallback storage with it.", "contributor": "DeKleineKobini" },
+				{ "message": "Avoid an error with 'Properties Filter' when not the actual properties overview.", "contributor": "DeKleineKobini" },
+				{ "message": "Avoid an error in the feature manager when an error occurs in a userscript on Firefox.", "contributor": "DeKleineKobini" }
+			],
+			"changes": [
+				{ "message": "Maintenance buttons to reset a fetched section.", "contributor": "DeKleineKobini" },
+				{ "message": "Better design for 'Average Personal Stat' on mobile.", "contributor": "DeKleineKobini" },
+				{ "message": "Explicitly state if there are no recorded changes in 'Live Networth'.", "contributor": "DeKleineKobini" },
+				{ "message": "Change the link from stocks in the popup to open the clicked stock.", "contributor": "DeKleineKobini" }
+			],
+			"removed": [],
+			"technical": []
+		}
+	},
+	{
+		"version": { "major": 9, "minor": 3, "build": 0 },
+		"date": "2026/09/13",
+		"logs": {
+			"features": [
+				{
+					"message": "Highlight blood bags matching your blood type in 'Quick Items' and 'Faction Quick Items' as well, on by default (requires 'Highlight blood bags' to be configured).",
+					"contributor": "Callz"
+				},
+				{ "message": "Filter based on username in the 'Ranked War Filter'.", "contributor": "DeKleineKobini" },
+				{ "message": "Filter based on side in the 'Ranked War Filter'.", "contributor": "DeKleineKobini" },
+				{ "message": "Allow presets to be used for 'Ranked War Filter'.", "contributor": "DeKleineKobini" },
+				{ "message": "'Armory Filter' for the utilities section.", "contributor": "DeKleineKobini" },
+				{ "message": "Display the addiction points in 'Drug Details'.", "contributor": "DeKleineKobini" },
+				{
+					"message": "Filter on the elimination page. This is disabled by default because of the performance implications it has.",
+					"contributor": "DeKleineKobini"
+				}
+			],
+			"fixes": [
+				{ "message": "Disable 'Stacking Mode' on your own profile.", "contributor": "DeKleineKobini" },
+				{ "message": "Avoid errors with 'Stacking Mode' if there is no revive button present.", "contributor": "DeKleineKobini" },
+				{
+					"message": "Don't overlap the disabling of the revive button with 'Stacking Mode', if it's already disabled.",
+					"contributor": "DeKleineKobini"
+				},
+				{ "message": "Resolve the 'Stacking Mode' icons not showing up properly.", "contributor": "DeKleineKobini" },
+				{
+					"message": "Fix the 'Hospital Filter' activity filter using the incorrect storage key, resulting in weird values on load.",
+					"contributor": "DeKleineKobini"
+				},
+				{ "message": "'Trade Timer' no longer updated live.", "contributor": "DeKleineKobini" },
+				{ "message": "Resolve issues with company features not working properly when visiting from the newspaper.", "contributor": "DeKleineKobini" },
+				{ "message": "Improved reliability for 'FF Scouter Gauge' on the elimination page.", "contributor": "DeKleineKobini" },
+				{ "message": "Avoid errors with 'Resizable Chat'.", "contributor": "DeKleineKobini" }
+			],
+			"changes": [
+				{ "message": "Switch to a different cross icon.", "contributor": "DeKleineKobini" },
+				{ "message": "No longer show 'Faction Quick Items' on the utilities tab.", "contributor": "DeKleineKobini" },
+				{ "message": "Don't show the racing reminder when traveling.", "contributor": "DeKleineKobini" }
+			],
+			"technical": [
+				{ "message": "Use a custom helper function for finding single elements, as part of the TypeScript journey.", "contributor": "DeKleineKobini" },
+				{ "message": "Enable stricter null-checks, as final step in the TypeScript journey.", "contributor": "DeKleineKobini" },
+				{ "message": "Move away from using disallowed HTML attributes by moving to datasets.", "contributor": "DeKleineKobini" },
+				{ "message": "Performance improvements along all filters.", "contributor": "DeKleineKobini" },
+				{ "message": "Cleanup some remains from the now-removed live disable functionality.", "contributor": "DeKleineKobini" }
+			]
+		}
 	},
 	{
 		"version": { "major": 9, "minor": 2, "build": 3 },

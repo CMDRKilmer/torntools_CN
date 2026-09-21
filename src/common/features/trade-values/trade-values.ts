@@ -1,8 +1,9 @@
 import "./trade-values.css";
-import { FEATURE_MANAGER, ITEM_RESOLVER, ttStorage } from "@common/utils/context";
+import { ITEM_RESOLVER, ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
@@ -10,7 +11,6 @@ import { Feature } from "@features/feature";
 
 function initialiseListeners() {
 	addCustomListener(EVENT_CHANNELS.TRADE, async ({ step }) => {
-		if (!FEATURE_MANAGER.isEnabled(TradeValuesFeature)) return;
 		if (!["view", "initiateTrade", "accept", "start"].includes(step)) return;
 
 		await addItemValues();
@@ -29,7 +29,7 @@ async function addItemValues() {
 
 		if (!text.includes("says:") && text.includes("added")) {
 			if (text.includes("$")) {
-				totalValue = parseInt(text.match(/\$([\d,]*)/i)[1].replaceAll(",", ""));
+				totalValue = parseInt(text.match(/\$([\d,]*)/i)![1].replaceAll(",", ""));
 			} else {
 				const itemEntries = text
 					.replace(" added", "")
@@ -66,9 +66,9 @@ async function addItemValues() {
 		side.classList.add("tt-modified");
 		let totalValue = 0;
 
-		const cashInTrade = side.querySelector(".cont .color1 .desc > li .name");
+		const cashInTrade = findElement(".cont .color1 .desc > li .name", side, true);
 		if (cashInTrade && cashInTrade.textContent.trim() !== "No money in trade")
-			totalValue += parseInt(cashInTrade.textContent.match(/\$([\d,]*)/i)[1].replaceAll(",", ""));
+			totalValue += parseInt(cashInTrade.textContent.match(/\$([\d,]*)/i)![1].replaceAll(",", ""));
 
 		for (const item of findAllElements(".cont .color2 .desc > li .name", side)) {
 			if (item.textContent === "No items in trade") continue;
@@ -78,7 +78,7 @@ async function addItemValues() {
 
 			let marketValue = 0;
 			if (Object.hasOwn(localMappings, name)) {
-				marketValue = ITEM_RESOLVER.getFullItem(parseInt(localMappings[name])).value.market_price;
+				marketValue = ITEM_RESOLVER.getFullItem(parseInt(localMappings[name]))?.value.market_price ?? 0;
 			} else {
 				marketValue = ITEM_RESOLVER.getAllFullItems().find((i) => i.name === name)?.value?.market_price ?? 0;
 			}
@@ -125,7 +125,7 @@ async function addItemValues() {
 			children: [checkbox],
 		});
 
-		side.querySelector(".title-black").appendChild(wrap);
+		findElement(".title-black", side).appendChild(wrap);
 	}
 }
 

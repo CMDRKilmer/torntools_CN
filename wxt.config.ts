@@ -85,7 +85,9 @@ export default defineConfig({
 		},
 	},
 	manifest: ({ browser }): UserManifest => {
+		// noinspection JSDeprecatedSymbols
 		const manifest: UserManifest = {
+			/* oxlint-disable typescript/no-deprecated -- Firefox still supports the `author` key; only Chrome/Chrome Web Store ignore it */
 			name: "TornTools 中文版",
 			description: "Torn 网页游戏增强工具 - 中文汉化版(基于 TornTools by Mephiles)",
 			// @ts-expect-error Discouraged notation, but supported.
@@ -104,7 +106,8 @@ export default defineConfig({
 				"https://ffscouter.com/",
 				"https://moonvault.tail3a72e2.ts.net/revive",
 				"https://torn-intel.com/",
-				"https://torntools.tornplayground.eu//",
+				"https://torntools.tornplayground.eu/",
+				"https://tornprobability.com/",
 			],
 			permissions: ["storage", "notifications", "alarms", ...(browser === "chrome" ? ["background", "offscreen"] : [])],
 			web_accessible_resources: [

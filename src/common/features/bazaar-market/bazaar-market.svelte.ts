@@ -1,4 +1,4 @@
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { getHashParameters } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
@@ -8,23 +8,15 @@ import { mount, unmount } from "svelte";
 import BazaarMarketBox from "./bazaar-market-box.svelte";
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.ITEMMARKET_ITEMS, async ({ item }) => {
-		if (!FEATURE_MANAGER.isEnabled(BazaarMarketFeature)) return;
-
-		await displayBazaars(item);
-	});
-	addCustomListener(EVENT_CHANNELS.ITEMMARKET_CATEGORY_ITEMS, () => {
-		if (!FEATURE_MANAGER.isEnabled(BazaarMarketFeature)) return;
-
-		removeExistingBox();
-	});
+	addCustomListener(EVENT_CHANNELS.ITEMMARKET_ITEMS, ({ item }) => displayBazaars(item));
+	addCustomListener(EVENT_CHANNELS.ITEMMARKET_CATEGORY_ITEMS, removeExistingBox);
 }
 
 async function startFeature() {
 	const params = getHashParameters();
 	if (!params.has("itemID")) return;
 
-	const id = parseInt(params.get("itemID"));
+	const id = parseInt(params.get("itemID")!);
 	if (!id) return;
 
 	await displayBazaars(id);
@@ -56,7 +48,7 @@ async function displayBazaars(itemId: number, retry = 0) {
 
 	// For some reason the element sometimes gets disconnected immediately, without even triggering a MutationObserver.
 	if (retry < 3) {
-		const marketBox = anchor.previousElementSibling;
+		const marketBox = anchor.previousElementSibling!;
 		setTimeout(() => {
 			if (marketBox.isConnected || !anchor.isConnected || request !== latestRequest || pendingItemId !== itemId) return;
 

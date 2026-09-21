@@ -12,7 +12,7 @@ export interface SearchablePreference {
 
 export function getLastKey(path: string): string {
 	const parts = path.split(".");
-	return parts.at(-1);
+	return parts.at(-1)!;
 }
 
 export const PREFERENCE_SEARCH_DATA: readonly SearchablePreference[] = [
@@ -152,6 +152,7 @@ export const PREFERENCE_SEARCH_DATA: readonly SearchablePreference[] = [
 	{ path: "settings.pages.sidebar.npcLootTimesService", label: "NPC loot source", group: "global", section: "sidebar" },
 	{ path: "settings.scripts.reminders.show", label: "Display reminders", group: "global", section: "sidebar" },
 	{ path: "settings.scripts.reminders.finished", label: "Include reminders with finished tasks", group: "global", section: "sidebar" },
+	{ path: "settings.scripts.reminders.ignored", label: "Include reminders with ignored tasks", group: "global", section: "sidebar" },
 	{ path: "settings.scripts.reminders.types.energyRefill", label: "Reminders: Energy Refill", group: "global", section: "sidebar" },
 	{ path: "settings.scripts.reminders.types.nerveRefill", label: "Reminders: Nerve Refill", group: "global", section: "sidebar" },
 	{ path: "settings.scripts.reminders.types.casinoRefill", label: "Reminders: Casino Refill", group: "global", section: "sidebar" },
@@ -252,6 +253,12 @@ export const PREFERENCE_SEARCH_DATA: readonly SearchablePreference[] = [
 
 	// Section: items
 	{ path: "settings.pages.items.quickItems", label: "Show the quick items container", group: "financial", section: "items" },
+	{
+		path: "settings.pages.items.highlightQuickItemBloodBags",
+		label: "Highlight blood bags in the quick items",
+		group: "financial",
+		section: "items",
+	},
 	{ path: "settings.pages.items.drugDetails", label: "Show details about drugs", group: "financial", section: "items" },
 	{ path: "settings.pages.items.highlightBloodBags", label: "Highlight blood bags", group: "financial", section: "items" },
 	{ path: "settings.pages.items.energyWarning", label: "Warn if an item gives you energy over 1000", group: "financial", section: "items" },
@@ -327,6 +334,7 @@ export const PREFERENCE_SEARCH_DATA: readonly SearchablePreference[] = [
 	{ path: "settings.pages.travel.peopleFilter", label: "Filter: Abroad People", group: "qol", section: "information" },
 	{ path: "settings.pages.userlist.filter", label: "Filter: Userlist", group: "qol", section: "information" },
 	{ path: "settings.pages.property.filter", label: "Filter: Properties", group: "qol", section: "information" },
+	{ path: "settings.pages.elimination.filter", label: "Filter: Elimination", group: "qol", section: "information" },
 
 	// Section: combat
 	{
@@ -477,6 +485,8 @@ export const PREFERENCE_SEARCH_DATA: readonly SearchablePreference[] = [
 	},
 	{ path: "settings.pages.faction.rankedWarValue", label: "Show the total rewards for ranked wars", group: "qol", section: "faction" },
 	{ path: "settings.pages.faction.warReportHighlight", label: "Highlight yourself in war reports", group: "qol", section: "faction" },
+	{ path: "settings.pages.faction.ocWeights", label: "Display role weights for OC2 scenarios", group: "qol", section: "faction" },
+	{ path: "settings.pages.faction.submitScenarios", label: "Submit OC2 scenario data", group: "qol", section: "faction" },
 
 	// Section: profile
 	{ path: "settings.pages.profile.avgpersonalstats", label: "Calculate average personal stats", group: "qol", section: "profile" },

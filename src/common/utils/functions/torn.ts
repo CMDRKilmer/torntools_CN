@@ -6,7 +6,8 @@ import { requireCondition, requireElement } from "@common/utils/functions/requir
 import { getCookie, isIntNumber, TO_MILLIS } from "@common/utils/functions/utilities";
 import { torntools } from "@common/utils/icons/torntools";
 import type { TornCalendarActivity, TornCalendarResponse, UserStock } from "tornapi-typescript";
-import { elementBuilder, findAllElements, findElementWithText, findParent, getSearchParameters, isElement } from "./dom";
+import { elementBuilder, findParent, getSearchParameters, isElement } from "./dom";
+import { findAllElements, findElement, findElementWithText } from "./find-elements";
 import { convertToNumber, formatNumber } from "./formatting";
 
 export const LINKS = {
@@ -209,6 +210,7 @@ export const NON_ATTACKABLE_ACCOUNTS: { id: number; reason: "Admin" | "NPC" }[] 
 export const NON_ATTACKABLE_ACCOUNT_IDS = NON_ATTACKABLE_ACCOUNTS.map(({ id }) => id);
 
 export interface DrugDetail {
+	addiction: number;
 	pros: string[];
 	cons?: string[];
 	cooldown: string;
@@ -223,6 +225,7 @@ export interface DrugDetail {
 export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	// Cannabis
 	196: {
+		addiction: 1,
 		pros: ["+8-12 Nerve"],
 		cons: ["-20% Strength", "-25% Defense", "-35% Speed"],
 		cooldown: "60-90 minutes",
@@ -234,6 +237,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Ecstasy
 	197: {
+		addiction: 20,
 		pros: ["Doubles Happy"],
 		cooldown: "3-4 hours",
 		overdose: {
@@ -242,6 +246,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Ketamine
 	198: {
+		addiction: 8,
 		pros: ["+50% Defense"],
 		cons: ["-20% Strength & Speed"],
 		cooldown: "45-60 minutes",
@@ -254,6 +259,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// LSD
 	199: {
+		addiction: 20,
 		pros: ["+30% Strength", "+50% Defense", "+50 Energy", "+200-500 Happy", "+5 Nerve"],
 		cons: ["-30% Speed & Dexterity"],
 		cooldown: "6-8 hours",
@@ -264,11 +270,13 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Opium
 	200: {
+		addiction: 10,
 		pros: ["Removes all hospital time (except Radiation Sickness) and replenishes life to 50%", "+30% Defense"],
 		cooldown: "2-3 hours",
 	},
 	// PCP
 	201: {
+		addiction: 26,
 		pros: ["+20% Strength & Dexterity", "+250 Happy"],
 		cooldown: "4-7 hours",
 		overdose: {
@@ -279,6 +287,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Shrooms
 	203: {
+		addiction: 6,
 		pros: ["+500 Happy"],
 		cons: ["-20% All Battle Stats", "-25 Energy (caps at 0)"],
 		cooldown: "3-4 hours",
@@ -289,6 +298,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Speed
 	204: {
+		addiction: 14,
 		pros: ["+20% Speed", "+50 Happy"],
 		cons: ["-20% Dexterity"],
 		cooldown: "4-6 hours",
@@ -300,6 +310,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Vicodin
 	205: {
+		addiction: 13,
 		pros: ["+25% All Battle Stats", "+75 Happy"],
 		cooldown: "4-6 hours",
 		overdose: {
@@ -308,6 +319,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Xanax
 	206: {
+		addiction: 35,
 		pros: ["+250 Energy", "+75 Happy"],
 		cons: ["-35% All Battle Stats"],
 		cooldown: "6-8 hours",
@@ -319,6 +331,7 @@ export const DRUG_INFORMATION: { [id: number]: DrugDetail } = {
 	},
 	// Love Juice
 	870: {
+		addiction: 50,
 		pros: ["Cost of attacking and reviving reduced by 15 energy.", "+50% Speed", "+25% Dexterity"],
 		cons: ["Only works on Valentine's Day"],
 		cooldown: "5-8 hours",
@@ -1789,12 +1802,12 @@ export function getPage() {
 			break;
 		}
 		case "page": {
-			const sid = getSearchParameters().get("sid").toLowerCase();
+			const sid = getSearchParameters().get("sid")?.toLowerCase();
 
-			if (sid === "list") page = getSearchParameters().get("type");
+			if (sid === "list") page = getSearchParameters().get("type") ?? page;
 			else if (sid === "crimes") page = "crimes-v2";
 			else if (sid === "holdemfull") page = "poker-fullscreen";
-			else page = sid;
+			else if (sid) page = sid;
 			break;
 		}
 		case "properties": {
@@ -1828,7 +1841,7 @@ export function getPage() {
 		case "war": {
 			const step = getSearchParameters().get("step")?.toLowerCase();
 
-			if (["chainreport", "raidreport", "rankreport", "warreport"].includes(step)) page = step;
+			if (step && ["chainreport", "raidreport", "rankreport", "warreport"].includes(step)) page = step;
 			break;
 		}
 	}
@@ -1841,7 +1854,7 @@ export function isPageWithSidebar(): boolean {
 }
 
 export function isCaptcha() {
-	return !!document.querySelector(".captcha");
+	return !!findElement(".captcha", true);
 }
 
 export function hasDarkMode() {
@@ -1918,8 +1931,8 @@ export function updateReactInput(input: HTMLInputElement | HTMLTextAreaElement, 
 			// 	break;
 			throw new Error(`Provided version is not supported at this moment: '${options.version}}'.`);
 		case REACT_UPDATE_VERSIONS.NATIVE_SETTER: {
-			const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-			nativeSetter.call(input, valueString);
+			const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+			if (nativeSetter) nativeSetter.call(input, valueString);
 
 			input.dispatchEvent(new Event("input", { bubbles: true }));
 			break;
@@ -1982,7 +1995,7 @@ export function getStockReward(reward: string, increment: number) {
 	} else if (reward.match(/^\d+x? /i)) {
 		const splitBenefit = reward.split(" ");
 		const hasX = splitBenefit[0].endsWith("x");
-		const amount = parseInt(splitBenefit.shift().replace("x", "")) * increment;
+		const amount = parseInt(splitBenefit.shift()!.replace("x", "")) * increment;
 		const item = splitBenefit.join(" ");
 
 		value = `${formatNumber(amount)}${hasX ? "x" : ""} ${item}`;
@@ -1996,7 +2009,7 @@ export function getStockReward(reward: string, increment: number) {
 export function getRewardValue(reward: string) {
 	if (!ITEM_RESOLVER.hasFullItems()) return -1;
 
-	let value: number;
+	let value: number | undefined;
 	if (reward.startsWith("$")) {
 		value = parseInt(reward.replace("$", "").replaceAll(",", ""));
 	} else if (reward.match(/^\d+x? /i)) {
@@ -2012,11 +2025,11 @@ export function getRewardValue(reward: string) {
 				case "Ammunition Pack":
 					break;
 				case "Clothing Cache":
-					prices = [1057, 1112, 1113, 1114, 1115, 1116, 1117].map((id) => ITEM_RESOLVER.getFullItem(id).value.market_price);
+					prices = [1057, 1112, 1113, 1114, 1115, 1116, 1117].map((id) => ITEM_RESOLVER.getFullItem(id)!.value.market_price);
 					break;
 				case "Random Property":
-					prices = torndata.properties
-						.filter(({ name }) => COMMON_PROPERTY_TYPES.includes(name))
+					prices = torndata
+						.properties!.filter(({ name }) => COMMON_PROPERTY_TYPES.includes(name))
 						.map((property) => property.cost)
 						.filter((price) => !!price)
 						.map((price) => price * 0.75);
@@ -2039,7 +2052,7 @@ export function getRewardValue(reward: string) {
 		value = -1;
 	}
 
-	return value;
+	return value ?? -1;
 }
 
 export function getStockBoughtPrice(stock: UserStock) {
@@ -2049,7 +2062,7 @@ export function getStockBoughtPrice(stock: UserStock) {
 }
 
 export function is2FACheckPage() {
-	return !!document.querySelector(".content-wrapper.logged-out .two-factor-auth-container");
+	return !!findElement(".content-wrapper.logged-out .two-factor-auth-container", true);
 }
 
 /*
@@ -2110,7 +2123,7 @@ Resend
 </div>*/
 
 export function getPageStatus() {
-	const infoMessage = document.querySelector(".content-wrapper .info-msg-cont");
+	const infoMessage = findElement(".content-wrapper .info-msg-cont", true);
 	if (infoMessage?.classList.contains("red")) {
 		const message = infoMessage.textContent;
 
@@ -2120,8 +2133,8 @@ export function getPageStatus() {
 		return { access: false, message: infoMessage.textContent };
 	}
 
-	if (document.querySelector(".captcha")) return { access: false, message: "Captcha required" };
-	else if (document.querySelector(".dirty-bomb")) return { access: false, message: "Dirty bomb screen" };
+	if (findElement(".captcha", true)) return { access: false, message: "Captcha required" };
+	else if (findElement(".dirty-bomb", true)) return { access: false, message: "Dirty bomb screen" };
 	else if (is2FACheckPage()) return { access: false, message: "2 Factor Authentication" };
 
 	return { access: true };
@@ -2136,15 +2149,17 @@ export function millisToNewDay() {
 	return newDate.getTime() - now;
 }
 
-export function getUserDetails() {
+export type UserDetails = { id: number; name: string } | { error: string };
+
+export function getUserDetails(): UserDetails {
 	let id: number, name: string;
 
 	if (!hasAPIData()) {
-		const script = document.querySelector("script[uid][name]");
+		const script = findElement("script[uid][name]", true);
 		if (!script) return { error: "Couldn't get details" };
 
-		id = parseInt(script.getAttribute("uid"));
-		name = script.getAttribute("name");
+		id = parseInt(script.getAttribute("uid")!);
+		name = script.getAttribute("name")!;
 	} else {
 		id = userdata.profile.id;
 		name = userdata.profile.name;
@@ -2155,18 +2170,16 @@ export function getUserDetails() {
 
 export function isOwnProfile() {
 	const details = getUserDetails();
-
-	if (details.error) return false;
+	if ("error" in details) return false;
 
 	const { id, name } = details;
 	const params = getSearchParameters();
 
-	return (params.has("XID") && parseInt(params.get("XID")) === id) || (params.has("NID") && params.get("NID") === name);
+	return (params.has("XID") && parseInt(params.get("XID")!) === id) || (params.has("NID") && params.get("NID") === name);
 }
 
 export function getUserEnergy() {
-	return document
-		.querySelector("[class*='bar__'][class*='energy__'] [class*='bar-value___'], [class*='bar__'][class*='energy__'] [class*='barValue___']")
+	return findElement("[class*='bar__'][class*='energy__'] [class*='bar-value___'], [class*='bar__'][class*='energy__'] [class*='barValue___']")
 		.textContent.split("/")
 		.map((x) => parseInt(x));
 }
@@ -2184,8 +2197,7 @@ export function getItemEnergy(id: number) {
 }
 
 export function getUserLife() {
-	return document
-		.querySelector("[class*='bar__'][class*='life__'] :is([class*='bar-value___'], [class*='barValue___'])")
+	return findElement("[class*='bar__'][class*='life__'] :is([class*='bar-value___'], [class*='barValue___'])")
 		.textContent.split("/")
 		.map((x) => parseInt(x));
 }
@@ -2193,15 +2205,15 @@ export function getUserLife() {
 export function getUsername(row: Element) {
 	let name: string, id: number, combined: string;
 
-	const element = row.querySelector<HTMLLinkElement>(".user.name");
+	const element = findElement<HTMLLinkElement>(".user.name", row, true);
 	if (element) {
-		const title = element.querySelector(":scope > [title]");
+		const title = findElement(":scope > [title]", element, true);
 		if (title) {
-			combined = title.getAttribute("title");
+			combined = title.getAttribute("title")!;
 
 			const regex = combined.match(/(.*) \[(\d+)]/);
-			name = regex[1];
-			id = parseInt(regex[2]);
+			name = regex![1];
+			id = parseInt(regex![2]);
 		} else {
 			name = element.textContent;
 			id = convertToNumber(element.href);
@@ -2209,15 +2221,16 @@ export function getUsername(row: Element) {
 			combined = `${name} [${id}]`;
 		}
 	} else {
-		const link = row.querySelector<HTMLLinkElement>("a[href*='profiles']");
-		if (link.getAttribute("id")) {
-			name = link.querySelector("span").textContent || "";
-			id = convertToNumber(link.getAttribute("id").split("-")[0]);
+		const link = findElement<HTMLLinkElement>("a[href*='profiles']", row);
+		const linkId = link.getAttribute("id");
+		if (linkId) {
+			name = findElement("span", link).textContent || "";
+			id = convertToNumber(linkId.split("-")[0]);
 
 			combined = name ? `${name} [${id}]` : id.toString();
 		} else {
 			name = link.textContent;
-			id = convertToNumber(link.href.match(/XID=(\d*)/i)[1]);
+			id = convertToNumber(link.href.match(/XID=(\d*)/i)![1]);
 
 			combined = `${name} [${id}]`;
 		}
@@ -2233,7 +2246,7 @@ export function hasFinishedEducation() {
 }
 
 export function isChatV3() {
-	return !!document.getElementById("notes_settings_button");
+	return !!findElement("#notes_settings_button", true);
 }
 
 let ttTopLinks: HTMLElement | undefined, ttTopLinksCreating: boolean | undefined;
@@ -2247,12 +2260,13 @@ export async function createTTTopLinks() {
 	}
 
 	ttTopLinksCreating = true;
-	ttTopLinks = elementBuilder({ type: "div", class: "tt-top-icons" });
+	const topLinks = elementBuilder({ type: "div", class: "tt-top-icons" });
+	ttTopLinks = topLinks;
 	await requireElement("[class*='titleContainer___']").then((title) => {
-		title.appendChild(ttTopLinks);
+		title.appendChild(topLinks);
 		ttTopLinksCreating = false;
 	});
-	return ttTopLinks;
+	return topLinks;
 }
 
 interface TornEvent {
@@ -2453,7 +2467,7 @@ export const MAX_MISSIONS = {
 } as const;
 
 export function getSidebarArea(): Node | null {
-	const areasTitle = findElementWithText("h2", "Areas");
+	const areasTitle = findElementWithText("h2", "Areas", true);
 	if (!areasTitle) return null;
 
 	return areasTitle;
@@ -2595,10 +2609,6 @@ export const RANKS: Record<string, number> = {
 	Invincible: 26,
 };
 
-export function isDarkTheme() {
-	return document.body.classList.contains("dark-mode");
-}
-
 /*
  * XID extraction
  */
@@ -2621,9 +2631,7 @@ export function extractXIDFromDOM(root: ParentNode): ExtractedXID[] {
 				const itemString = node.getAttribute("data-item") || node.getAttribute("data-itemid");
 				if (!itemString) return null;
 
-				const equipButton = node.querySelector<HTMLElement>(
-					'[data-action="equip"], [data-action="unequip"], button[name="equip"], button[name="unequip"]',
-				);
+				const equipButton = findElement('[data-action="equip"], [data-action="unequip"], button[name="equip"], button[name="unequip"]', node, true);
 				const xidString = extractRawXIDFromDataset(node) || extractRawXIDFromDataset(equipButton);
 				if (!xidString) return null;
 
@@ -2661,7 +2669,7 @@ export function extractXIDFromJson(json: any): ExtractedXID[] {
 		return items
 			.filter((x) => !!x)
 			.filter((item) => (item.type2 || item.type || item.category || item.itemType) === "Temporary")
-			.map<ExtractedXID>((id) => {
+			.map<ExtractedXID | null>((id) => {
 				const itemId = id.ID || id.id || id.itemID || id.itemId || id.number || id.item;
 				if (!itemId) return null;
 
@@ -2669,7 +2677,8 @@ export function extractXIDFromJson(json: any): ExtractedXID[] {
 				if (!xid) return null;
 
 				return { item: parseInt(itemId), xid: parseInt(xid) };
-			});
+			})
+			.filter((x) => x !== null);
 	} else if (typeof items === "object") {
 		return Object.values(items).flatMap((x) => extractXIDFromJson(x));
 	}
@@ -2684,19 +2693,17 @@ export function extractXIDFromHTML(html: string): ExtractedXID[] {
 	if (!nodes.length) return [];
 
 	return nodes
-		.map<ExtractedXID>((li) => {
+		.map<ExtractedXID | null>((li) => {
 			const itemId = li.getAttribute("data-item") || li.getAttribute("data-itemid");
 			if (!itemId) return null;
 
 			const armoryId =
-				li.getAttribute("data-armoryid") ||
-				li.getAttribute("data-id") ||
-				li.querySelector<HTMLElement>(`[data-id]:not([data-id='${itemId}'])`)?.dataset?.id;
+				li.getAttribute("data-armoryid") || li.getAttribute("data-id") || findElement(`[data-id]:not([data-id='${itemId}'])`, li, true)?.dataset?.id;
 			if (!armoryId) return null;
 
 			return { item: parseInt(itemId), xid: parseInt(armoryId) };
 		})
-		.filter((x) => !!x);
+		.filter((x) => x !== null);
 }
 
 // End of XID extraction
@@ -2706,11 +2713,11 @@ export function extractFactionsFromPage() {
 	if (!factionLinks.length) return [];
 
 	const factions = new Set(
-		document.querySelector(".users-list > li .user.faction img")
+		findElement(".users-list > li .user.faction img", true)
 			? factionLinks
-					.map((row) => row.querySelector("img"))
-					.filter((img) => !!img)
-					.map((img) => img.getAttribute("title").trim())
+					.map((row) => findElement("img", row, true))
+					.filter((img) => img !== null)
+					.map((img) => img.getAttribute("title")!.trim())
 					.filter((tag) => !!tag)
 			: factionLinks.map((row) => row.textContent.trim()).filter((tag) => !!tag),
 	);
@@ -2719,7 +2726,7 @@ export function extractFactionsFromPage() {
 }
 
 export function isFlyoutSidebar(): boolean {
-	return !!document.querySelector("[class*='userInformation___']");
+	return !!findElement("[class*='userInformation___']", true);
 }
 
 export function getFactionName(): string | null {
@@ -2729,7 +2736,7 @@ export function getFactionName(): string | null {
 
 	const iconTitle =
 		getSidebarData()?.statusIcons?.icons?.faction?.subtitle ??
-		document.querySelector("li[class*='icon'] a[href='/factions.php?step=your']")?.getAttribute("aria-label") ??
+		findElement("li[class*='icon'] a[href='/factions.php?step=your']", true)?.getAttribute("aria-label") ??
 		(hasAPIData() ? userdata?.icons?.find((icon) => icon.id === 9)?.description : null);
 	if (iconTitle) {
 		const factionParts = iconTitle.split(" of ");
@@ -2755,9 +2762,9 @@ export function getBloodType(): BloodType | null {
 }
 
 export function getHospitalTime(): number | null {
-	const header = document.querySelector<HTMLElement>("#topHeaderBanner[data-hospital]");
+	const header = findElement("#topHeaderBanner[data-hospital]", true);
 	if (header) {
-		const timestamp = parseInt(header.dataset.hospital) * 1000;
+		const timestamp = parseInt(header.dataset.hospital!) * 1000;
 		if (timestamp < Date.now()) return null;
 
 		return timestamp;

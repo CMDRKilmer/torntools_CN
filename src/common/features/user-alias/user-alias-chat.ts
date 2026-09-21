@@ -1,8 +1,7 @@
 import "./user-alias.css";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { findAllElements } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireChatsLoaded } from "@common/utils/functions/requires";
 import { isChatV3 } from "@common/utils/functions/torn";
 import {
@@ -27,33 +26,21 @@ async function addListeners() {
 	addAliasMessage();
 
 	addCustomListener(EVENT_CHANNELS.CHAT_OPENED, () => {
-		if (FEATURE_MANAGER.isEnabled(UserAliasChatFeature)) {
-			addAliasTitle();
-			addAliasMessage();
-		}
+		addAliasTitle();
+		addAliasMessage();
 	});
-	addCustomListener(EVENT_CHANNELS.CHAT_MESSAGE, ({ message }) => {
-		if (FEATURE_MANAGER.isEnabled(UserAliasChatFeature)) addAliasMessage(message);
-	});
+	addCustomListener(EVENT_CHANNELS.CHAT_MESSAGE, ({ message }) => addAliasMessage(message));
 	addCustomListener(EVENT_CHANNELS.CHAT_REFRESHED, () => {
-		if (!FEATURE_MANAGER.isEnabled(UserAliasChatFeature)) return;
-
 		removeAlias();
 		addAliasTitle();
 		addAliasMessage();
 	});
-	addCustomListener(EVENT_CHANNELS.CHAT_RECONNECTED, async () => {
-		if (!FEATURE_MANAGER.isEnabled(UserAliasChatFeature)) return;
-
+	addCustomListener(EVENT_CHANNELS.CHAT_RECONNECTED, () => {
 		removeAlias();
 		addAliasTitle();
 		addAliasMessage();
 	});
-	addCustomListener(EVENT_CHANNELS.CHAT_CLOSED, () => {
-		if (!FEATURE_MANAGER.isEnabled(UserAliasChatFeature)) return;
-
-		addAliasTitle();
-	});
+	addCustomListener(EVENT_CHANNELS.CHAT_CLOSED, addAliasTitle);
 }
 
 function addAliasTitle() {
@@ -76,9 +63,9 @@ function addAliasTitle() {
 			const alias = getUserAliasByName(chatPlayerTitle);
 			if (!alias) return;
 
-			const nameNode = chatHeader.querySelector<HTMLElement>("[class*='minimized-chat-box__username-text__']");
+			const nameNode = findElement("[class*='minimized-chat-box__username-text__']", chatHeader);
 			nameNode.dataset.original = nameNode.textContent;
-			nameNode.firstChild.textContent = alias.alias;
+			nameNode.firstChild!.textContent = alias.alias;
 		});
 		findAllElements(`${SELECTOR_CHAT_V2__CHAT_BOX} > ${SELECTOR_CHAT_V2__CHAT_BOX_HEADER}`).forEach((chatHeader) => {
 			const chatPlayerTitle = chatHeader.textContent;
@@ -87,9 +74,9 @@ function addAliasTitle() {
 			const alias = getUserAliasByName(chatPlayerTitle);
 			if (!alias) return;
 
-			const nameNode = chatHeader.querySelector<HTMLElement>(SELECTOR_CHAT_V2__HEADER_NAME);
+			const nameNode = findElement(SELECTOR_CHAT_V2__HEADER_NAME, chatHeader);
 			nameNode.dataset.original = nameNode.textContent;
-			nameNode.firstChild.textContent = alias.alias;
+			nameNode.firstChild!.textContent = alias.alias;
 		});
 	}
 }
@@ -104,13 +91,13 @@ function addAliasMessage(message: Element | null = null) {
 				].join(", "),
 			).forEach((profileLink) => {
 				profileLink.dataset.original = profileLink.textContent;
-				profileLink.firstChild.textContent = alias;
+				profileLink.firstChild!.textContent = alias;
 			});
 		});
 		return;
 	}
 
-	const profileLink = message.querySelector<HTMLAnchorElement>("a[href*='/profiles.php?XID=']");
+	const profileLink = findElement<HTMLAnchorElement>("a[href*='/profiles.php?XID=']", message, true);
 	if (!profileLink) return;
 
 	const messageUserID = parseInt(profileLink.href.split("=")[1]);
@@ -118,16 +105,16 @@ function addAliasMessage(message: Element | null = null) {
 	if (!alias) return;
 
 	profileLink.dataset.original = profileLink.textContent;
-	profileLink.firstChild.textContent = alias.alias;
+	profileLink.firstChild!.textContent = alias.alias;
 }
 
 function removeAlias() {
 	findAllElements(`${SELECTOR_CHAT_ROOT} [data-original]`).forEach((element) => {
-		if (element.dataset.original) element.firstChild.textContent = element.dataset.original;
+		if (element.dataset.original) element.firstChild!.textContent = element.dataset.original;
 		delete element.dataset.original;
 	});
 	findAllElements(`${SELECTOR_CHAT_ROOT} [data-original-self]`).forEach((element) => {
-		if (element.dataset.original) element.textContent = element.dataset.originalSelf;
+		if (element.dataset.original) element.textContent = element.dataset.originalSelf!;
 		delete element.dataset.original;
 	});
 }

@@ -1,18 +1,18 @@
 import "./energy-warning.css";
 import { isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements, isElement } from "@common/utils/functions/dom";
+import { elementBuilder, isElement } from "@common/utils/functions/dom";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getItemEnergy, getPage, getPageStatus, getUserEnergy } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
 
 function initialiseListener() {
 	document.addEventListener("click", async (event) => {
-		if (!FEATURE_MANAGER.isEnabled(EnergyWarningFeature) || !isElement(event.target)) return;
+		if (!isElement(event.target)) return;
 
 		const factionPage = getPage() === "factions";
-		let item: HTMLElement | undefined;
+		let item: HTMLElement | null;
 		if (factionPage) item = event.target.closest("li");
 		else item = event.target.closest("li[data-category]");
 
@@ -31,7 +31,7 @@ async function addWarning(item: HTMLElement) {
 	if (!message) return;
 
 	const factionPage = getPage() === "factions";
-	const received = getItemEnergy(parseInt(factionPage ? item.querySelector<HTMLElement>(".img-wrap").dataset.itemid : item.dataset.item));
+	const received = getItemEnergy(parseInt(factionPage ? findElement(".img-wrap", item).dataset.itemid! : item.dataset.item!));
 	if (!received) return;
 
 	const [current] = getUserEnergy();
@@ -43,10 +43,10 @@ async function addWarning(item: HTMLElement) {
 		text: "Warning! Using this item increases your energy to over 1000!",
 	});
 
-	if (factionPage) message.querySelector(".confirm").insertAdjacentElement("afterend", warning);
-	else message.querySelector(".act #wai-action-desc").appendChild(warning);
+	if (factionPage) findElement(".confirm", message).insertAdjacentElement("afterend", warning);
+	else findElement(".act #wai-action-desc", message).appendChild(warning);
 
-	message.querySelector<HTMLElement>("a.next-act").addEventListener("click", clickListener, { capture: true, once: true });
+	findElement("a.next-act", message).addEventListener("click", clickListener, { capture: true, once: true });
 }
 
 function clickListener(event: MouseEvent) {

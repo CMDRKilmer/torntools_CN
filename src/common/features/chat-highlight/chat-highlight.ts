@@ -1,7 +1,6 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { findAllElements } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { withoutEndPunctuation } from "@common/utils/functions/formatting";
 import { requireChatsLoaded } from "@common/utils/functions/requires";
 import { getUserDetails, HIGHLIGHT_PLACEHOLDERS, is2FACheckPage } from "@common/utils/functions/torn";
@@ -32,15 +31,12 @@ interface HighlightColor {
 
 function initialiseHighlights() {
 	addCustomListener(EVENT_CHANNELS.CHAT_MESSAGE, ({ message }) => {
-		if (!FEATURE_MANAGER.isEnabled(ChatHighlightFeature)) return;
+		const messageBox = findElement(SELECTOR_CHAT_V2__MESSAGE_BOX, message, true);
 
-		const messageBox = message.querySelector<HTMLElement>(SELECTOR_CHAT_V2__MESSAGE_BOX);
 		if (messageBox) applyV2Highlights(messageBox);
 		else applyV3Highlights(message);
 	});
 	addCustomListener(EVENT_CHANNELS.CHAT_OPENED, ({ chat }) => {
-		if (!FEATURE_MANAGER.isEnabled(ChatHighlightFeature)) return;
-
 		for (const message of findAllElements(`${SELECTOR_CHAT_V2__CHAT_BOX_BODY} ${SELECTOR_CHAT_V2__MESSAGE_BOX}`, chat)) {
 			applyV2Highlights(message);
 		}
@@ -49,36 +45,22 @@ function initialiseHighlights() {
 		}
 	});
 	addCustomListener(EVENT_CHANNELS.CHAT_REFRESHED, (information) => {
-		if (!FEATURE_MANAGER.isEnabled(ChatHighlightFeature)) return;
-
 		if (information) {
 			const { chat } = information;
-			for (const message of findAllElements(`${SELECTOR_CHAT_V3__BOX_SCROLLER} ${SELECTOR_CHAT_V3__MESSAGE}`, chat)) {
-				applyV3Highlights(message);
-			}
+			findAllElements(`${SELECTOR_CHAT_V3__BOX_SCROLLER} ${SELECTOR_CHAT_V3__MESSAGE}`, chat).forEach(applyV3Highlights);
 		} else {
-			for (const message of findAllElements(`${SELECTOR_CHAT_V2__CHAT_BOX_BODY} ${SELECTOR_CHAT_V2__MESSAGE_BOX}`)) {
-				applyV2Highlights(message);
-			}
+			findAllElements(`${SELECTOR_CHAT_V2__CHAT_BOX_BODY} ${SELECTOR_CHAT_V2__MESSAGE_BOX}`).forEach(applyV2Highlights);
 		}
 	});
 	addCustomListener(EVENT_CHANNELS.CHAT_RECONNECTED, () => {
-		if (!FEATURE_MANAGER.isEnabled(ChatHighlightFeature)) return;
-
-		for (const message of findAllElements(`${SELECTOR_CHAT_V3__BOX_SCROLLER} ${SELECTOR_CHAT_V3__MESSAGE}`)) {
-			applyV3Highlights(message);
-		}
+		findAllElements(`${SELECTOR_CHAT_V3__BOX_SCROLLER} ${SELECTOR_CHAT_V3__MESSAGE}`).forEach(applyV3Highlights);
 	});
-	addCustomListener(EVENT_CHANNELS.WINDOW__FOCUS, () => {
-		if (!FEATURE_MANAGER.isEnabled(ChatHighlightFeature)) return;
-
-		applyAllHighlights();
-	});
+	addCustomListener(EVENT_CHANNELS.WINDOW__FOCUS, applyAllHighlights);
 }
 
 function readSettings() {
 	highlights = settings.pages.chat.highlights
-		.map<HighlightColor>((highlight) => {
+		.map<HighlightColor | null>((highlight) => {
 			let { name, color } = highlight;
 
 			for (const placeholder of HIGHLIGHT_PLACEHOLDERS) {
@@ -92,7 +74,7 @@ function readSettings() {
 
 			return { name: name.toLowerCase(), color: color.length === 7 ? `${color}6e` : color, senderColor: color };
 		})
-		.filter((h) => !!h);
+		.filter((highlight) => highlight !== null);
 
 	applyAllHighlights();
 }
@@ -114,9 +96,9 @@ function applyV2Highlights(message: HTMLElement) {
 	if (!message) return;
 	if (!highlights?.length) return;
 
-	const sender = simplify(message.querySelector(SELECTOR_CHAT_V2__MESSAGE_SENDER).textContent.replace(":", ""));
-	const words = message.lastElementChild.textContent
-		.split(" ")
+	const sender = simplify(findElement(SELECTOR_CHAT_V2__MESSAGE_SENDER, message).textContent.replace(":", ""));
+	const words = message
+		.lastElementChild!.textContent!.split(" ")
 		.map(simplify)
 		.flatMap((text) => [text, withoutEndPunctuation(text)]);
 
@@ -144,23 +126,23 @@ function applyV3Highlights(message: HTMLElement) {
 	if (!highlights?.length) return;
 
 	let sender: string;
-	const senderElement = message.querySelector(SELECTOR_CHAT_V3__MESSAGE_SENDER);
+	const senderElement = findElement(SELECTOR_CHAT_V3__MESSAGE_SENDER, message, true);
 	if (senderElement) {
 		sender = senderElement.textContent.replace(":", "");
 	} else {
 		const root = message.closest(SELECTOR_CHAT_V3__VARIOUS_ROOT);
 		if (root?.matches(SELECTOR_CHAT_V3__MESSAGE_SELF)) {
-			sender = getUserDetails().name;
+			const details = getUserDetails();
+			sender = "name" in details ? (details.name ?? "") : "";
 		} else if (root && !root.matches(SELECTOR_CHAT_V3__MESSAGE_SELF)) {
-			const chatItem = message.closest("[class*='item___']");
-			const title = chatItem.querySelector("[class*='title___']");
+			const chatItem = message.closest("[class*='item___']")!;
+			const title = findElement("[class*='title___']", chatItem);
 			sender = title.textContent;
 		} else return;
 	}
 	sender = simplify(sender);
 
-	const words = message
-		.querySelector("[class*='message___']")
+	const words = findElement("[class*='message___']", message)
 		.textContent.split(" ")
 		.map(simplify)
 		.flatMap((text) => [text, withoutEndPunctuation(text)]);

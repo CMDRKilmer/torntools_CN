@@ -1,4 +1,3 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { elementBuilder } from "@common/utils/functions/dom";
@@ -11,9 +10,7 @@ import type { ScouterResult, ScouterService } from "@features/ff-scouter/ff-scou
 let SCOUTER_SERVICE: ScouterService;
 
 function initialiseMiniProfile() {
-	addFetchListener((event) => {
-		if (!FEATURE_MANAGER.isEnabled(FFScouterMiniProfileFeature)) return;
-
+	addFetchListener(async (event) => {
 		const {
 			page,
 			json,
@@ -25,7 +22,7 @@ function initialiseMiniProfile() {
 		const sid = params.get("sid");
 		if (sid !== "UserMiniProfile") return;
 
-		showFF(json);
+		await showFF(json);
 	});
 }
 
@@ -72,7 +69,7 @@ export default class FFScouterMiniProfileFeature extends Feature {
 	}
 
 	override async initialise() {
-		SCOUTER_SERVICE = scouterService();
+		SCOUTER_SERVICE = scouterService()!;
 		initialiseMiniProfile();
 	}
 

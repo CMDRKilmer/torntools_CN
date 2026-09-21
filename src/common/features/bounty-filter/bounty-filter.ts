@@ -1,21 +1,18 @@
 import "./bounty-filter.css";
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { createCheckbox } from "@common/utils/elements/checkbox/checkbox";
 import { createContainer, findContainer } from "@common/utils/functions/containers";
-import { checkDevice, elementBuilder, findAllElements, getHashParameters } from "@common/utils/functions/dom";
+import { checkDevice, elementBuilder, getHashParameters } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
 import { createStatistics } from "@common/utils/functions/filters";
 import type { StatisticsResult } from "@common/utils/functions/filters";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { Feature } from "@features/feature";
 
 function initialiseListener() {
-	new MutationObserver(async () => {
-		if (!FEATURE_MANAGER.isEnabled(BountyFilterFeature)) return;
-
-		await addFilter();
-	}).observe(document.querySelector(".content-wrapper"), { childList: true });
+	new MutationObserver(addFilter).observe(findElement(".content-wrapper"), { childList: true });
 }
 
 async function addFilter() {
@@ -24,7 +21,7 @@ async function addFilter() {
 	if (findContainer("Bounty Filter")) return;
 	await requireElement(".bounties-list > li > ul > li .reward");
 	const { options } = createContainer("Bounty Filter", {
-		previousElement: document.querySelector(".bounties-wrap .bounties-total"),
+		previousElement: findElement(".bounties-wrap .bounties-total"),
 		onlyHeader: true,
 		applyRounding: false,
 	});
@@ -48,7 +45,7 @@ async function addFilter() {
 	let statistics: StatisticsResult;
 	if (!device.mobile && !device.tablet) {
 		statistics = createStatistics("rows", true, true);
-		options.parentElement.querySelector(".title .text").appendChild(statistics.element);
+		findElement(".title .text", options.parentElement!).appendChild(statistics.element);
 	}
 
 	// Setup saved filters
@@ -76,13 +73,13 @@ async function addFilter() {
 			},
 		});
 
-		const list = document.querySelector(".bounties-list");
+		const list = findElement(".bounties-list");
 		for (const bounty of findAllElements(":scope > li[data-id]", list)) {
-			if (maxLevel > 0 && parseInt(bounty.querySelector(".level").lastChild.textContent) > maxLevel) {
+			if (maxLevel > 0 && parseInt(findElement(".level", bounty).lastChild!.textContent!) > maxLevel) {
 				hideBounty(bounty);
 				continue;
 			} else showBounty(bounty);
-			if (hideUnavailable && bounty.querySelector(".user-red-status, .user-blue-status")) {
+			if (hideUnavailable && findElement(".user-red-status, .user-blue-status", bounty, true)) {
 				hideBounty(bounty);
 			} else showBounty(bounty);
 		}
@@ -92,14 +89,14 @@ async function addFilter() {
 			statistics.updateStatistics(
 				findAllElements(".bounties-list > li[data-id]:not(.tt-hidden)").length,
 				findAllElements(".bounties-list > li[data-id]").length,
-				options.parentElement.querySelector(".title .text"),
+				findElement(".title .text", options.parentElement!),
 			);
 		triggerCustomListener(EVENT_CHANNELS.FILTER_APPLIED, { filter: "Bounty Filter" });
 
 		function hideBounty(bounty: Element) {
 			bounty.classList.add("tt-hidden");
 
-			if (bounty.nextElementSibling.classList.contains("tt-stats-estimate")) {
+			if (bounty.nextElementSibling?.classList.contains("tt-stats-estimate")) {
 				bounty.nextElementSibling.classList.add("tt-hidden");
 			}
 		}
@@ -107,7 +104,7 @@ async function addFilter() {
 		function showBounty(bounty: Element) {
 			bounty.classList.remove("tt-hidden");
 
-			if (bounty.nextElementSibling.classList.contains("tt-stats-estimate")) {
+			if (bounty.nextElementSibling?.classList.contains("tt-stats-estimate")) {
 				bounty.nextElementSibling.classList.remove("tt-hidden");
 			}
 		}

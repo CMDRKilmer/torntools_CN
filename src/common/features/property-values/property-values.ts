@@ -1,8 +1,8 @@
 import type { PropertiesPage } from "@common/pages/properties-page.ts";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements, getHashParameters } from "@common/utils/functions/dom";
+import { elementBuilder, getHashParameters } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber, formatNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
@@ -12,12 +12,12 @@ const SUPPORTED_ROUTES: PropertiesPage[] = ["all-properties", "spouse-properties
 
 function initialiseListeners() {
 	addCustomListener(EVENT_CHANNELS.PROPERTIES__ROUTE, async ({ route }) => {
-		if (!FEATURE_MANAGER.isEnabled(PropertyValuesFeature) || !SUPPORTED_ROUTES.includes(route.page)) return;
+		if (!SUPPORTED_ROUTES.includes(route.page)) return;
 
 		await addPropertyValues();
 	});
 	addCustomListener(EVENT_CHANNELS.PROPERTIES__ROUTE_PAGE, async ({ route }) => {
-		if (!FEATURE_MANAGER.isEnabled(PropertyValuesFeature) || !SUPPORTED_ROUTES.includes(route.page)) return;
+		if (!SUPPORTED_ROUTES.includes(route.page)) return;
 
 		await addPropertyValues();
 	});
@@ -27,10 +27,10 @@ async function addPropertyValues() {
 	await requireElement("#properties-page-wrap .properties-list .title");
 
 	for (const property of findAllElements(".properties-list > *:not(.clear):not(:has(.tt-property-value))")) {
-		const info = property.querySelector(".info > li:nth-child(2)");
+		const info = findElement(".info > li:nth-child(2)", property, true);
 		if (!info) continue;
 
-		property.querySelector(".title").insertAdjacentElement(
+		findElement(".title", property).insertAdjacentElement(
 			"beforeend",
 			elementBuilder({
 				type: "span",

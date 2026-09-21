@@ -1,7 +1,8 @@
 import "./stock-acronyms.css";
 import { settings, stockdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -10,9 +11,8 @@ async function addAcronyms() {
 	await requireElement("[class*='stockMarket__'] ul[class*='stock__'] [class*='nameContainer__']");
 
 	for (const stockName of findAllElements("[class*='stockMarket__'] ul[class*='stock__'] [class*='stockName__']")) {
-		const container = stockName.querySelector("[class*='nameContainer__']");
-
-		const id = parseInt(stockName.closest("[class*='stock___']").id);
+		const container = findElement("[class*='nameContainer__']", stockName);
+		const id = parseInt(stockName.closest("[class*='stock___']")!.id);
 		const stock = stockdata.stocks.find((s) => s.id === id);
 		if (!stock) continue;
 

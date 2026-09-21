@@ -1,13 +1,14 @@
 import "./ranked-war-filter.css";
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { addCustomListener, EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
-import { checkboxesSection, createFilter, presetSection, sliderSection } from "@common/utils/functions/filters";
+import { checkboxesSection, createFilter, presetSection, radioSection, sliderSection, textSection } from "@common/utils/functions/filters";
 import type { FilterController, SliderRange } from "@common/utils/functions/filters";
+import { findElement } from "@common/utils/functions/find-elements";
 import { addFetchListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
-import { getPageStatus } from "@common/utils/functions/torn";
+import { getPageStatus, getUsername } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
 
 let filter: FilterController | undefined;
@@ -16,16 +17,14 @@ let interval: number | undefined;
 function initialiseListeners() {
 	document.addEventListener("click", async (event) => {
 		const rankedWarItem = (event.target as Element).closest("[class*='warListItem__']");
-		if (rankedWarItem?.querySelector(":scope > [data-warid]")) {
-			addFilterContainer(
-				(await requireElement(".descriptions .faction-war .enemy-faction", { parent: rankedWarItem.parentElement })).closest(".faction-war"),
-			).catch(console.error);
-		}
+		if (!rankedWarItem || !findElement(":scope > [data-warid]", rankedWarItem, true)) return;
+
+		const enemyFaction = await requireElement(".descriptions .faction-war .enemy-faction", { parent: rankedWarItem.parentElement! });
+
+		addFilterContainer(enemyFaction.closest(".faction-war")!).catch(console.error);
 	});
 
 	addCustomListener(EVENT_CHANNELS.STATS_ESTIMATED, ({ row }) => {
-		if (!FEATURE_MANAGER.isEnabled(RankedWarFilterFeature)) return;
-
 		if (!row.closest(".faction-war")) {
 			// Estimate didn't happen in a ranked war list.
 			return;
@@ -35,7 +34,6 @@ function initialiseListeners() {
 	});
 
 	addFetchListener(async ({ detail: { page, fetch } }) => {
-		if (!FEATURE_MANAGER.isEnabled(RankedWarFilterFeature)) return;
 		if (!location.hash.includes("#/war/rank")) return;
 
 		const params = new URL(fetch.url).searchParams;
@@ -49,7 +47,9 @@ type RankedWarFilterState = {
 	enabled: boolean;
 	activity: string[];
 	status: string[];
+	name: string;
 	level: SliderRange;
+	side: string;
 	statsEstimates: string[] | undefined;
 	ffScore: { min: number; max: number } | undefined;
 };
@@ -86,7 +86,7 @@ async function addFilterContainer(rankedWarList?: Element) {
 			test: (row, status) => {
 				if (!status.length) return true;
 
-				const statusEl = row.querySelector<HTMLElement>(".status");
+				const statusEl = findElement(".status", row, true);
 				if (!statusEl) return true;
 
 				return status.some((s) => statusEl.classList.contains(s));
@@ -100,12 +100,43 @@ async function addFilterContainer(rankedWarList?: Element) {
 			defaults: { low: filters.factionRankedWar.levelStart, high: filters.factionRankedWar.levelEnd },
 			formatCounter: (r) => `Level ${r.start} - ${r.end}`,
 			test: (row, range) => {
-				const level = parseInt(row.querySelector(".level").textContent);
+				const level = parseInt(findElement(".level", row).textContent);
 
 				if (range.start && level < range.start) return false;
 				if (range.end !== 100 && level > range.end) return false;
 
 				return true;
+			},
+		}),
+
+		textSection({
+			key: "name",
+			title: "Name",
+			defaultValue: filters.factionRankedWar.name,
+			test: (row, name) => {
+				if (!name) return true;
+
+				try {
+					const username = getUsername(row);
+
+					return username.name.toLowerCase().includes(name.toLowerCase());
+				} catch {
+					return true;
+				}
+			},
+		}),
+
+		radioSection({
+			key: "side",
+			title: "Side",
+			items: [
+				{ description: "Attackers", value: "attackers" },
+				{ description: "Defenders", value: "defenders" },
+				{ description: "Both", value: "both" },
+			],
+			defaultValue: filters.factionRankedWar.side,
+			test: (row, side) => {
+				return side === "both" || (side === "attackers" && row.classList.contains("enemy")) || (side === "defenders" && row.classList.contains("your"));
 			},
 		}),
 
@@ -140,8 +171,10 @@ async function addFilterContainer(rankedWarList?: Element) {
 						enabled: state.enabled,
 						activity: state.activity,
 						status: state.status,
+						name: state.name,
 						levelStart: state.level.start,
 						levelEnd: state.level.end,
+						side: state.side,
 						estimates: state.statsEstimates ?? filters.factionRankedWar.estimates,
 						ffScoreMax: state.ffScore?.max ?? filters.factionRankedWar.ffScoreMax,
 						ffScoreMin: state.ffScore?.min ?? filters.factionRankedWar.ffScoreMin,
@@ -151,6 +184,7 @@ async function addFilterContainer(rankedWarList?: Element) {
 
 			triggerCustomListener(EVENT_CHANNELS.FILTER_APPLIED, { filter: "Ranked War Filter" });
 		},
+		presets: { key: "ranked-war" },
 	});
 
 	await filter.run();

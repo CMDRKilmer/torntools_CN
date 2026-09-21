@@ -2,6 +2,7 @@ import "./gym-progress.css";
 import { settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber, dropDecimals, formatNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { Feature } from "@features/feature";
@@ -15,20 +16,20 @@ async function addProgress() {
 	const currentGym = await requireElement("[class*='gymButton_'][class*='inProgress_']").catch((): undefined => undefined);
 	if (!currentGym) return;
 
-	const categoryElement = currentGym.parentElement;
-	const categoryElementIndex = Array.from(categoryElement.parentElement.children).indexOf(categoryElement);
+	const categoryElement = currentGym.parentElement!;
+	const categoryElementIndex = Array.from(categoryElement.parentElement!.children).indexOf(categoryElement);
 
-	const currentGymIndex = Array.from(currentGym.parentElement.children).indexOf(currentGym);
+	const currentGymIndex = Array.from(currentGym.parentElement!.children).indexOf(currentGym);
 	const index = categoryElementIndex * 8 + currentGymIndex - 1;
 
-	const percentage = convertToNumber(currentGym.querySelector("[class*='percentage_']").textContent);
+	const percentage = convertToNumber(findElement("[class*='percentage_']", currentGym).textContent);
 	let goal = gymGoals[index];
 	if (hasAPIData() && userdata.perks.job.some((perk) => perk.includes("gym experience"))) goal = goal / 1.3;
 
 	const stat = dropDecimals(goal * (percentage / 100));
 	if (!stat || !goal) return;
 
-	gymNotification.closest("[class*='notification__']").classList.add("tt-modified");
+	gymNotification.closest("[class*='notification__']")!.classList.add("tt-modified");
 	gymNotification.appendChild(
 		elementBuilder({
 			type: "p",

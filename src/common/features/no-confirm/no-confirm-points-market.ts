@@ -1,17 +1,14 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { findAllElements } from "@common/utils/functions/dom";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { Feature } from "@features/feature";
 
 function initialise() {
 	new MutationObserver(async (mutations) => {
-		if (!FEATURE_MANAGER.isEnabled(NoConfirmPointsMarketFeature)) return;
-
 		if (mutations[0].removedNodes.length > 1) return;
 
 		await startFeature();
-	}).observe(document.querySelector(".users-point-sell"), { childList: true });
+	}).observe(findElement(".users-point-sell"), { childList: true });
 }
 
 async function startFeature() {
@@ -22,7 +19,7 @@ async function startFeature() {
 
 function removeConfirmation() {
 	for (const item of findAllElements(".users-point-sell > li:not(.yes) > span[href]")) {
-		const url = item.getAttribute("href");
+		const url = item.getAttribute("href")!;
 		if (settings.scripts.noConfirm.pointsMarketRemove && url.includes("ajax_action=remove")) {
 			item.classList.add("yes");
 			item.setAttribute("href", url.replace("ajax_action=remove", "ajax_action=remove1"));

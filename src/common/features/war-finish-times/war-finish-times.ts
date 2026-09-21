@@ -1,23 +1,21 @@
 import "./war-finish-times.css";
 import { isDestroyed, isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatDate, formatTime, textToTime } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { Feature } from "@features/feature";
 
 function startListeners() {
 	if (isInternalFaction) {
-		addCustomListener(EVENT_CHANNELS.FACTION_MAIN, async () => {
-			if (FEATURE_MANAGER.isEnabled(WarFinishTimesFeature)) await addFinishTimes();
-		});
+		addCustomListener(EVENT_CHANNELS.FACTION_MAIN, addFinishTimes);
 	}
 }
 
 async function addFinishTimes() {
-	if (isInternalFaction && !document.querySelector(".faction-description")) return;
+	if (isInternalFaction && !findElement(".faction-description", true)) return;
 	if (!isInternalFaction && (await isDestroyed())) return;
 
 	await requireElement("#react-root .f-war-list");

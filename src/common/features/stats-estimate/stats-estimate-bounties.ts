@@ -1,8 +1,8 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { getHashParameters } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -12,20 +12,16 @@ const statsEstimate = new StatsEstimate("Bounties", true);
 
 function registerListeners() {
 	addCustomListener(EVENT_CHANNELS.SWITCH_PAGE, async () => {
-		if (!FEATURE_MANAGER.isEnabled(StatsEstimateBountiesFeature) || settings.pages.bounties.filter) return;
+		if (settings.pages.bounties.filter) return;
 
 		await showEstimates();
 	});
-	addCustomListener(EVENT_CHANNELS.FILTER_APPLIED, async () => {
-		if (!FEATURE_MANAGER.isEnabled(StatsEstimateBountiesFeature)) return;
-
-		await showEstimates();
-	});
+	addCustomListener(EVENT_CHANNELS.FILTER_APPLIED, showEstimates);
 }
 
 async function startFeature() {
 	if (settings.pages.bounties.filter) {
-		const list = document.querySelector(".bounties-list");
+		const list = findElement(".bounties-list", true);
 		if (!list?.classList.contains("tt-filtered")) return;
 	}
 
@@ -35,16 +31,16 @@ async function startFeature() {
 async function showEstimates() {
 	await requireElement(".bounties-list");
 
-	const startParam = parseInt(getHashParameters().get("start")) || 0;
-	const start = parseInt(getHashParameters(document.querySelector<HTMLAnchorElement>(".claim a").href.split("#!")[1] ?? "").get("start")) || 0;
+	const startParam = parseInt(getHashParameters().get("start")!) || 0;
+	const start = parseInt(getHashParameters(findElement<HTMLAnchorElement>(".claim a").href.split("#!")[1] ?? "").get("start")!) || 0;
 	if (start !== startParam) return;
 
 	statsEstimate.clearQueue();
 	statsEstimate.showEstimates(
 		".bounties-list > li[data-id]",
 		(row) => ({
-			id: parseInt(row.querySelector<HTMLAnchorElement>(".target a").href.match(/(\d+)/g)?.at(-1)),
-			level: parseInt(row.querySelector(".level").textContent.replaceAll("\n", "").split(":").at(-1)!.trim()),
+			id: parseInt(findElement<HTMLAnchorElement>(".target a", row).href.match(/(\d+)/g)?.at(-1) ?? ""),
+			level: parseInt(findElement(".level", row).textContent.replaceAll("\n", "").split(":").at(-1)!.trim()),
 		}),
 		{ hasFilter: true },
 	);

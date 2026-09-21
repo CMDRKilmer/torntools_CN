@@ -1,24 +1,20 @@
 import { isOwnCompany, readCompanyDetails } from "@common/pages/company-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder } from "@common/utils/functions/dom";
+import { elementBuilder, getHashParameters } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements.ts";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
 
 function initialise() {
 	if (!isOwnCompany) {
-		addCustomListener(EVENT_CHANNELS.COMPANY_EMPLOYEES_PAGE, async () => {
-			if (!FEATURE_MANAGER.isEnabled(CompanyIDFeature) || !settings.pages.companies.idBesideCompanyName) return;
-
-			await addID();
-		});
+		addCustomListener(EVENT_CHANNELS.COMPANY_EMPLOYEES_PAGE, addID);
 	}
 }
 
 async function addID() {
-	if (document.getElementById("tt-company-id")) return; // Element has already been added - second check in-case feature reinjects
+	if (findElement("#tt-company-id", true)) return; // Element has already been added - second check in-case feature reinjects
 
 	const container = await requireElement(
 		isOwnCompany ? "div.company-wrap > div.title-black" : "div.company-details-wrap > div.company-details > div.title-black",
@@ -48,6 +44,9 @@ export default class CompanyIDFeature extends Feature {
 	}
 
 	override async execute() {
+		const params = getHashParameters();
+		if (params.get("p") !== "corpinfo") return;
+
 		await addID();
 	}
 

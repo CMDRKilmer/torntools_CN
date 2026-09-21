@@ -3,6 +3,7 @@ import { settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import { addInformationSection, checkDevice, elementBuilder, showInformationSection } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireSidebar } from "@common/utils/functions/requires";
 import { getUserDetails, isPageWithSidebar, LINKS } from "@common/utils/functions/torn";
 import { getTimeUntilNextJobUpdate } from "@common/utils/functions/utilities";
@@ -17,12 +18,13 @@ async function showCompanyAddictionLevel() {
 	showInformationSection();
 
 	const addiction = await getCompanyAddiction();
+	if (!addiction) return;
 
 	const companyAddictionElement = elementBuilder({ type: "span", dataset: { addiction } });
 
 	companyAddictionElement.textContent = addiction.toString();
 
-	document.querySelector(".tt-sidebar-information").appendChild(
+	findElement(".tt-sidebar-information").appendChild(
 		elementBuilder({
 			type: "section",
 			id: "companyAddictionLevel",
@@ -36,7 +38,10 @@ async function getCompanyAddiction() {
 	if (ttCache.hasValue("company", "addiction")) {
 		return ttCache.get<number>("company", "addiction");
 	} else {
-		const id = getUserDetails().id;
+		const details = getUserDetails();
+		if ("error" in details) return;
+
+		const { id } = details;
 		const company_id = (userdata.job as UserCompany).id;
 
 		let response: CompanyEmployeesResponse;
@@ -64,7 +69,7 @@ async function getCompanyAddiction() {
 }
 
 function removeCompanyAddictionLevel() {
-	document.querySelector("#companyAddictionLevel")?.remove();
+	findElement("#companyAddictionLevel", true)?.remove();
 }
 
 export default class CompanyAddictionFeature extends Feature {

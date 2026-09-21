@@ -139,6 +139,7 @@ export function toClipboard(text: string) {
 		document.body.appendChild(textarea);
 
 		textarea.select();
+		// oxlint-disable-next-line typescript/no-deprecated -- legacy fallback for browsers without navigator.clipboard; no modern replacement exists for this path
 		const copied = document.execCommand("copy");
 
 		textarea.remove();
@@ -272,7 +273,7 @@ export function isSpeechSynthesisAvailable() {
 }
 
 export function contextSafeCustomEvent<T = never>(event: string, detail: T): CustomEvent<T> {
-	const safeDetail: T = usingFirefox() ? document.defaultView.structuredClone(detail) : detail;
+	const safeDetail: T = usingFirefox() ? document.defaultView!.structuredClone(detail) : detail;
 
 	return new CustomEvent(event, { detail: safeDetail });
 }

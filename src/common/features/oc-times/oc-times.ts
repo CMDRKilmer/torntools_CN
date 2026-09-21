@@ -1,24 +1,20 @@
 import "./oc-times.css";
 import { isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { factiondata, settings } from "@common/utils/data/database";
 import { hasAPIData, hasOC1Data } from "@common/utils/functions/api";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatDate, formatTime } from "@common/utils/functions/formatting";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.FACTION_CRIMES, () => {
-		if (!FEATURE_MANAGER.isEnabled(OCTimesFeature)) return;
-
-		showTimes();
-	});
+	addCustomListener(EVENT_CHANNELS.FACTION_CRIMES, showTimes);
 }
 
 function startFeature() {
-	if (!document.querySelector(".faction-crimes-wrap")) return;
+	if (!findElement(".faction-crimes-wrap", true)) return;
 
 	showTimes();
 }
@@ -27,10 +23,10 @@ function showTimes() {
 	let oldDate: boolean | string = false;
 
 	for (const crime of findAllElements(".organize-wrap .crimes-list > .item-wrap")) {
-		const details = crime.querySelector<HTMLElement>(".details-wrap");
+		const details = findElement(".details-wrap", crime, true);
 		if (!details) continue;
 
-		const id = details.dataset.crime;
+		const id = details.dataset.crime!;
 
 		let text: string;
 		if ("crimes" in factiondata && id in factiondata.crimes) {
@@ -47,7 +43,7 @@ function showTimes() {
 			text = "N/A";
 		}
 
-		crime.querySelector(".status").appendChild(elementBuilder({ type: "span", class: "tt-oc-time", text }));
+		findElement(".status", crime).appendChild(elementBuilder({ type: "span", class: "tt-oc-time", text }));
 	}
 }
 

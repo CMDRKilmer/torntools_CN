@@ -1,9 +1,10 @@
-import { FEATURE_MANAGER, ITEM_RESOLVER, ttStorage } from "@common/utils/context";
+import { ITEM_RESOLVER, ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import type { WeaponBonusFilter } from "@common/utils/data/default-database";
 import { addCustomListener, EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
 import { createFilter, createWeaponBonusSection, selectSection, textSection } from "@common/utils/functions/filters";
 import type { FilterController, FilterSectionDef } from "@common/utils/functions/filters";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { ARMOR_SETS, ITEM_TYPES } from "@common/utils/functions/torn";
@@ -13,16 +14,8 @@ let filter: FilterController | undefined;
 let filterItemType = "";
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.AUCTION_SWITCH_TYPE, async ({ type }) => {
-		if (!FEATURE_MANAGER.isEnabled(AuctionHouseFilterFeature)) return;
-
-		await rebuildForTab(type);
-	});
-	addCustomListener(EVENT_CHANNELS.SWITCH_PAGE, () => {
-		if (!FEATURE_MANAGER.isEnabled(AuctionHouseFilterFeature)) return;
-
-		void filter?.run();
-	});
+	addCustomListener(EVENT_CHANNELS.AUCTION_SWITCH_TYPE, ({ type }) => rebuildForTab(type));
+	addCustomListener(EVENT_CHANNELS.SWITCH_PAGE, () => filter?.run());
 }
 
 function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): FilterSectionDef<unknown>[] {
@@ -34,7 +27,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 			test: (row, name) => {
 				if (!name) return true;
 
-				return row.querySelector(".item-name")!.textContent.toLowerCase().includes(name.toLowerCase());
+				return findElement(".item-name", row).textContent.toLowerCase().includes(name.toLowerCase());
 			},
 		}),
 	];
@@ -104,7 +97,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 					const d = parseFloat(damage);
 					if (Number.isNaN(d)) return true;
 
-					const label = row.querySelector(".bonus-attachment-item-damage-bonus + .label-value");
+					const label = findElement(".bonus-attachment-item-damage-bonus + .label-value", row, true);
 					if (!label) return false;
 
 					return parseFloat(label.textContent) >= d;
@@ -119,7 +112,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 					const a = parseFloat(accuracy);
 					if (Number.isNaN(a)) return true;
 
-					const label = row.querySelector(".bonus-attachment-item-accuracy-bonus + .label-value");
+					const label = findElement(".bonus-attachment-item-accuracy-bonus + .label-value", row, true);
 					if (!label) return false;
 
 					return parseFloat(label.textContent) >= a;
@@ -136,7 +129,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 					const toFilter = bonuses.filter(({ bonus }) => bonus);
 					if (!toFilter.length) return true;
 
-					const found = Array.from(row.querySelectorAll(".iconsbonuses .bonus-attachment-icons"))
+					const found = findAllElements(".iconsbonuses .bonus-attachment-icons", row)
 						.map((icon) => icon.getAttribute("title")!)
 						.map((title) => title.split("<br/>"))
 						.filter((values) => values.length >= 2)
@@ -161,7 +154,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 				test: (row, quality) => {
 					if (!quality || quality === "all") return true;
 
-					const match = row.querySelector(".item-plate")!.className.match(/yellow|orange|red/);
+					const match = findElement(".item-plate", row).className.match(/yellow|orange|red/);
 					return (match ? match[0] : "none") === quality;
 				},
 			}),
@@ -180,7 +173,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 				const d = parseFloat(defence);
 				if (Number.isNaN(d)) return true;
 
-				const label = row.querySelector(".bonus-attachment-item-defence-bonus + .label-value");
+				const label = findElement(".bonus-attachment-item-defence-bonus + .label-value", row, true);
 				if (!label) return false;
 
 				return parseFloat(label.textContent) >= d;
@@ -194,7 +187,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 			test: (row, set) => {
 				if (!set) return true;
 
-				const rowSet = row.querySelector(".item-cont-wrap .item-name")!.textContent.split(" ")[0].toLowerCase();
+				const rowSet = findElement(".item-cont-wrap .item-name", row).textContent.split(" ")[0].toLowerCase();
 				return rowSet === set;
 			},
 		}),
@@ -207,7 +200,7 @@ function buildSections(itemType: "weapons" | "armor" | "items" | "temporary"): F
 				const b = parseFloat(armorBonus);
 				if (Number.isNaN(b)) return true;
 
-				return convertToNumber(row.querySelector(".iconsbonuses .bonus-attachment-icons")?.getAttribute("title")) >= b;
+				return convertToNumber(findElement(".iconsbonuses .bonus-attachment-icons", row, true)?.getAttribute("title")) >= b;
 			},
 		}),
 	];
@@ -224,7 +217,7 @@ async function rebuildForTab(itemType: string) {
 		container: {
 			title: "Auction House Filter",
 			class: "mt10",
-			nextElement: document.querySelector("#auction-house-tabs")!,
+			nextElement: findElement("#auction-house-tabs"),
 		},
 		statisticsLabel: "items",
 		enabled: filters.auction.enabled,
@@ -255,7 +248,7 @@ async function enableFilter() {
 }
 
 function getItemId(row: HTMLElement): number {
-	return parseInt(row.querySelector<HTMLImageElement>("img.torn-item")!.src.match(/items\/([0-9]+)\/large.png/i)![1]);
+	return parseInt(findElement<HTMLImageElement>("img.torn-item", row).src.match(/items\/([0-9]+)\/large.png/i)![1]);
 }
 
 function getCategories(itemType: string) {

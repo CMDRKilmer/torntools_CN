@@ -4,12 +4,12 @@
  * Applicable to almost everything beyond this point.
  */
 
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { displayAlert } from "@common/utils/functions/alerts";
 import { hasAPIData } from "@common/utils/functions/api";
-import { elementBuilder, findAllElements, isElement } from "@common/utils/functions/dom";
+import { elementBuilder, isElement } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { getPage } from "@common/utils/functions/torn";
 import { isTabFocused } from "@common/utils/functions/utilities";
 import { Feature } from "@features/feature";
@@ -26,24 +26,19 @@ let lockFailure = false;
 
 function initialise() {
 	new MutationObserver((mutations) => {
-		if (!FEATURE_MANAGER.isEnabled(FFScouterGaugeFeature)) return;
-
 		const hasRelevantNodes = mutations.some(
 			(mutation) =>
 				mutation.addedNodes.length > 0 &&
 				Array.from(mutation.addedNodes)
 					.filter(isElement)
-					.some((element) => element.matches(pageSelector) || element.querySelector(pageSelector)),
+					.some((element) => pageSelector && (element.matches(pageSelector) || findElement(pageSelector, element, true))),
 		);
 		if (!hasRelevantNodes) return;
 
 		safeTriggerGauge();
 	}).observe(document.body, { childList: true, subtree: true });
-	addCustomListener(EVENT_CHANNELS.WINDOW__FOCUS, () => {
-		if (!FEATURE_MANAGER.isEnabled(FFScouterGaugeFeature)) return;
-
-		safeTriggerGauge();
-	});
+	addCustomListener(EVENT_CHANNELS.WINDOW__FOCUS, safeTriggerGauge);
+	addCustomListener(EVENT_CHANNELS.ELIMINATION__TEAM_TABLE_CHANGE, safeTriggerGauge);
 }
 
 let rafId: number | null = null;
@@ -117,7 +112,7 @@ function triggerGauge() {
 }
 
 interface GaugeElements {
-	element: HTMLElement;
+	element: HTMLAnchorElement;
 	id: string;
 }
 
@@ -127,13 +122,13 @@ function applyGauge(e: HTMLAnchorElement[]) {
 	const elements: Array<GaugeElements> = e
 		.filter((el) => !el.classList.contains("tt-ff-scouter-indicator"))
 		.map((element) => ({ element, id: extractPlayerId(element) }))
-		.filter(({ id }) => !!id);
+		.filter((e): e is GaugeElements => e.id !== null);
 	if (!elements.length) return Promise.resolve();
 
 	return processBatches(elements);
 }
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 25;
 const BATCH_DELAY = 10;
 
 function processBatches(elementsWithIds: GaugeElements[]): Promise<void> {
@@ -174,7 +169,7 @@ function processBatches(elementsWithIds: GaugeElements[]): Promise<void> {
 
 							updates.push(() => {
 								element.style.setProperty("--band-percent", percent.toString());
-								element.querySelector(".tt-ff-scouter-arrow")?.remove();
+								findElement(".tt-ff-scouter-arrow", element, true)?.remove();
 								element.appendChild(
 									elementBuilder({
 										type: "img",
@@ -207,19 +202,19 @@ function processBatches(elementsWithIds: GaugeElements[]): Promise<void> {
 function extractPlayerId(element: HTMLAnchorElement): string | null {
 	if (element.nodeName.toLowerCase() === "a") {
 		const match = element.href?.match(/.*XID=(?<target_id>\d+)/);
-		if (match) return match.groups.target_id;
+		if (match) return match.groups!.target_id;
 	}
 
 	const parent = element.parentElement as HTMLAnchorElement;
 	if (parent?.href) {
 		const match = parent.href.match(/.*XID=(?<target_id>\d+)/);
-		if (match) return match.groups.target_id;
+		if (match) return match.groups!.target_id;
 	}
 
-	const anchor = element.querySelector("a");
+	const anchor = findElement("a", element, true);
 	if (anchor?.href) {
 		const match = anchor.href.match(/.*XID=(?<target_id>\d+)/);
-		if (match) return match.groups.target_id;
+		if (match) return match.groups!.target_id;
 	}
 
 	return null;
@@ -267,11 +262,11 @@ export default class FFScouterGaugeFeature extends Feature {
 	}
 
 	override initialise() {
-		SCOUTER_SERVICE = scouterService();
+		SCOUTER_SERVICE = scouterService()!;
 		BLUE_ARROW = browser.runtime.getURL("/images/svg-icons/blue-arrow.svg");
 		GREEN_ARROW = browser.runtime.getURL("/images/svg-icons/green-arrow.svg");
 		RED_ARROW = browser.runtime.getURL("/images/svg-icons/red-arrow.svg");
-		pageSelector = SELECTORS.get(getPage());
+		pageSelector = SELECTORS.get(getPage()) ?? null;
 		initialise();
 	}
 

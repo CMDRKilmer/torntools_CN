@@ -1,5 +1,6 @@
-import { findAllElements, isHTMLElement } from "@common/utils/functions/dom";
+import { isHTMLElement } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
+import { findAllElements } from "@common/utils/functions/find-elements";
 import { addFetchListener } from "@common/utils/functions/listeners";
 import { requireDOMContentLoaded, requireElement } from "@common/utils/functions/requires";
 import { isAbroad } from "@common/utils/functions/torn";
@@ -46,7 +47,7 @@ export async function setupTravelAbroadPage() {
 		const data = json as InternalTornTravelDataShop;
 
 		let items: SyncItem[];
-		if ("shops" in data) {
+		if ("shops" in data && data.shops) {
 			items = data.shops
 				.flatMap((shop) => shop.stock)
 				.map((s) => ({
@@ -54,7 +55,7 @@ export async function setupTravelAbroadPage() {
 					quantity: s.stock,
 					cost: s.price,
 				}));
-		} else if ("stock" in data) {
+		} else if ("stock" in data && data.stock) {
 			items = data.stock.map<SyncItem>((s) => ({ id: s.ID, quantity: s.stock, cost: s.price }));
 		} else {
 			throw new Error("Unexpected abroad travel data response!");
@@ -72,11 +73,6 @@ export async function setupTravelAbroadPage() {
 			triggerCustomListener(EVENT_CHANNELS.TRAVEL_ABROAD__SHOP_REFRESH);
 		}
 	});
-}
-
-export interface TravelAbroadShopLoadDetails {
-	items: AbroadItem[];
-	country: string;
 }
 
 export async function markTravelTableColumns() {

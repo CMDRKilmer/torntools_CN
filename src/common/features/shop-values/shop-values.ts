@@ -1,7 +1,8 @@
 import "./shop-values.css";
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
@@ -10,8 +11,6 @@ import { Feature } from "@features/feature";
 
 function initialiseListeners() {
 	addXHRListener(({ detail: { page, xhr } }) => {
-		if (!FEATURE_MANAGER.isEnabled(ShopValuesFeature)) return;
-
 		if (page !== "shops") return;
 
 		const params = new URLSearchParams(xhr.requestBody);
@@ -28,10 +27,14 @@ async function showValues() {
 	findAllElements(".sell-items-list > li:not(.tt-value-modified)").forEach((row) => {
 		row.classList.add("tt-value-modified");
 
-		const id = parseInt(row.dataset.item);
-		const value = ITEM_RESOLVER.getFullItem(id).value.market_price;
+		const id = parseInt(row.dataset.item!);
 
-		row.querySelector(".desc")!.appendChild(
+		const resolvedItem = ITEM_RESOLVER.getFullItem(id);
+		if (!resolvedItem) return;
+
+		const value = resolvedItem.value.market_price;
+
+		findElement(".desc", row).appendChild(
 			elementBuilder({
 				type: "span",
 				class: "tt-market-value",

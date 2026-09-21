@@ -1,6 +1,7 @@
 import { factiondata, filters, loadDatabase, localdata, npcs, settings, storageListeners, userdata, version } from "@common/utils/data/database";
-import { checkDevice, elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { checkDevice, elementBuilder } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireCondition, requireDOMContentLoaded, requireDOMInteractive, requireElement } from "@common/utils/functions/requires";
 import { arraysEquals, objectsEquals, toClipboard } from "@common/utils/functions/utilities";
 import { PHBoldCheck, PHBoldCopy, PHBoldSpinnerGap, PHQuestion, PHXCircle } from "@common/utils/icons/phosphor-icons";
@@ -47,16 +48,17 @@ export class ExtensionFeatureManager implements FeatureManager {
 
 		window.addEventListener("error", (e) => {
 			if (e.error) {
-				this.logError("Uncaught window error:", e.error);
+				if (e.error.filename.includes("injectedScript")) return;
+
+				this.logError("Uncaught window error: ", e.error);
 			} else {
-				// For some reason we are getting an error from Torn here (while scrolling in the chats).
 				if (
 					e.message === "ResizeObserver loop completed with undelivered notifications." &&
 					(e.filename.includes("torn.com/") || e.filename === "") // Firefox has no filename for some reason.
 				)
 					return;
 
-				this.logError("Uncaught window error:", e);
+				this.logError("Uncaught window error: ", e);
 			}
 		});
 		window.addEventListener("unhandledrejection", (e) => {
@@ -95,7 +97,10 @@ export class ExtensionFeatureManager implements FeatureManager {
 		this.errorCount = this.errorCount + 1;
 		if (this.errorCount === 1) {
 			// Show error messages with the first error.
-			requireCondition(() => this.container)
+			requireCondition(() => {
+				if (this.container !== null) return this.container;
+				else return null;
+			})
 				.then((container) => requireElement(".error-messages", { parent: container }))
 				.then((messages) => messages.classList.add("show"));
 		}
@@ -108,14 +113,14 @@ export class ExtensionFeatureManager implements FeatureManager {
 			this.earlyErrors.push(error);
 		} else if (this.errorCount <= 25) {
 			try {
-				this.container.setAttribute("error-count", this.errorCount.toString());
+				this.container.dataset.errorCount = this.errorCount.toString();
 			} catch {
-				// 上下文失效时 setAttribute 会抛错,忽略即可
+				// 上下文失效时 dataset 写入会抛错,忽略即可
 			}
 			this.addErrorToPopup(error).catch((err) => console.error(err));
 		} else {
 			try {
-				this.container.setAttribute("error-count", "25+");
+				this.container.dataset.errorCount = "25+";
 			} catch {
 				// 同上
 			}
@@ -149,9 +154,9 @@ export class ExtensionFeatureManager implements FeatureManager {
 		if (!this.container) return;
 
 		try {
-			this.container.setAttribute("error-count", this.errorCount.toString());
+			this.container.dataset.errorCount = this.errorCount.toString();
 		} catch {
-			// 上下文失效时 setAttribute 会抛错,直接放弃本次弹错
+			// 上下文失效时 dataset 写入会抛错,直接放弃本次弹错
 			return;
 		}
 
@@ -178,6 +183,12 @@ export class ExtensionFeatureManager implements FeatureManager {
 						elementBuilder({ type: "pre", class: "stack", text: formattedLocation }),
 					],
 				});
+			} else {
+				errorElement = elementBuilder({
+					type: "pre",
+					class: "error",
+					children: [elementBuilder({ type: "div", class: "name", text: `Unknown error message: ${String(error)}` })],
+				});
 			}
 		} else {
 			errorElement = elementBuilder({
@@ -192,7 +203,7 @@ export class ExtensionFeatureManager implements FeatureManager {
 				],
 			});
 		}
-		this.container.querySelector(".error-messages").appendChild(errorElement);
+		findElement(".error-messages", this.container).appendChild(errorElement);
 	}
 
 	private clearEarlyErrors() {
@@ -345,11 +356,14 @@ export class ExtensionFeatureManager implements FeatureManager {
 		}
 
 		void (async () => {
-			let row = this.container.querySelector(`[feature-name="${feature.name}"]`);
-			if (row) {
-				row.setAttribute("status", status);
+			const container = this.container;
+			if (!container) return;
 
-				const statusIcon = row.querySelector("svg");
+			let row = findElement(`[data-feature-name="${feature.name}"]`, container, true);
+			if (row) {
+				row.dataset.status = status;
+
+				const statusIcon = findElement("svg", row);
 				const newIcon = getIconElement(status);
 				statusIcon.replaceWith(newIcon);
 
@@ -359,18 +373,18 @@ export class ExtensionFeatureManager implements FeatureManager {
 				row = elementBuilder({
 					type: "div",
 					class: "tt-feature",
-					attributes: { "feature-name": feature.name, status: status },
+					dataset: { featureName: feature.name, status: status },
 					children: [getIconElement(status), elementBuilder({ type: "span", text: feature.name })],
 				});
 
-				let scopeEl = this.container.querySelector(`[scope*="${feature.scope}"]`);
+				let scopeEl = findElement(`[data-scope*="${feature.scope}"]`, container, true);
 				if (!scopeEl) {
 					scopeEl = elementBuilder({
 						type: "div",
-						attributes: { scope: feature.scope },
+						dataset: { scope: feature.scope },
 						children: [elementBuilder({ type: "div", text: `— ${feature.scope} —` })],
 					});
-					this.container.querySelector(".tt-features-list").appendChild(scopeEl);
+					findElement(".tt-features-list", container).appendChild(scopeEl);
 				}
 				scopeEl.appendChild(row);
 			}
@@ -417,7 +431,9 @@ export class ExtensionFeatureManager implements FeatureManager {
 			id: this.containerID,
 			attributes: {
 				tabindex: "0", // To make :focus-within working on div elements
-				"error-count": "0",
+			},
+			dataset: {
+				errorCount: "0",
 			},
 			children: [
 				elementBuilder({
@@ -429,9 +445,9 @@ export class ExtensionFeatureManager implements FeatureManager {
 							events: {
 								click: (e) => {
 									const target = e.target as Element;
-									const title = target.matches(`#${this.containerID}`) ? target : target.closest(`#${this.containerID}`);
+									const title = target.matches(`#${this.containerID}`) ? target : target.closest(`#${this.containerID}`)!;
 
-									title.querySelector("button").style.backgroundImage = title.classList.toggle("open")
+									findElement("button", title).style.backgroundImage = title.classList.toggle("open")
 										? `url(${browser.runtime.getURL("/images/svg-icons/cross.svg")})`
 										: `url(${browser.runtime.getURL("/images/icon_128.png")})`;
 								},
@@ -455,7 +471,7 @@ export class ExtensionFeatureManager implements FeatureManager {
 									children: [PHBoldCopy()],
 									events: {
 										click: () => {
-											toClipboard(`TornTools ${document.querySelector<HTMLElement>("#tt-page-status .error-messages").innerText}`);
+											toClipboard(`TornTools ${findElement("#tt-page-status .error-messages").innerText}`);
 										},
 									},
 								}),
@@ -488,14 +504,14 @@ export class ExtensionFeatureManager implements FeatureManager {
 	hideEmptyScopes() {
 		if (!settings.featureDisplay) return;
 
-		findAllElements(".tt-features-list > div[scope]", this.container!).forEach((scopeDiv) => {
+		findAllElements(".tt-features-list > div[data-scope]", this.container!).forEach((scopeDiv) => {
 			let hideScope = false;
-			if (settings.featureDisplayOnlyFailed && findAllElements(":scope > .tt-feature[status*='failed']", scopeDiv).length === 0) hideScope = true;
-			if (settings.featureDisplayHideDisabled && findAllElements(":scope > .tt-feature:not([status*='disabled'])", scopeDiv).length === 0)
+			if (settings.featureDisplayOnlyFailed && findAllElements(":scope > .tt-feature[data-status*='failed']", scopeDiv).length === 0) hideScope = true;
+			if (settings.featureDisplayHideDisabled && findAllElements(":scope > .tt-feature:not([data-status*='disabled'])", scopeDiv).length === 0)
 				hideScope = true;
 			scopeDiv.classList[hideScope ? "add" : "remove"]("no-content");
 		});
-		if (!this.container!.querySelector(".tt-features-list > div[scope]:not(.no-content)")) this.container!.classList.add("no-content");
+		if (!findElement(".tt-features-list > div[data-scope]:not(.no-content)", this.container!, true)) this.container!.classList.add("no-content");
 		else this.container!.classList.remove("no-content");
 	}
 

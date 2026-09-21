@@ -3,6 +3,7 @@ import { setupBountiesPage } from "@common/pages/bounties-page";
 import { setupCompanyPage } from "@common/pages/company-page";
 import { setupCrimesV1Page } from "@common/pages/crimes1-page";
 import { setupCrimesV2Page } from "@common/pages/crimes2-page";
+import { setupEliminationPage } from "@common/pages/elimination-page.ts";
 import { setupFactionsPage } from "@common/pages/factions-page";
 import { runGlobalPageScripts } from "@common/pages/global-page";
 import { setupGymPage } from "@common/pages/gym-page";
@@ -31,9 +32,9 @@ import AlignLeftFeature from "@features/align-left/align-left";
 import ArmoryFilterFeature from "@features/armory-filter/armory-filter";
 import ArmoryWorthFeature from "@features/armory-worth/armory-worth";
 import AttackTimeoutWarningFeature from "@features/attack-timeout-warning/attack-timeout-warning";
-import AuctionHouseFilterFeature from "@features/auction-house-filter/auction-house-filter";
 import "@common/utils/global/globalStyle.css";
 import "@common/utils/global/globalVariables.css";
+import AuctionHouseFilterFeature from "@features/auction-house-filter/auction-house-filter";
 import AuctionHouseMovePaginationFeature from "@features/auction-house-move-pagination/auction-house-move-pagination";
 import AveragePersonalStatFeature from "@features/average-personal-stat/average-personal-stat";
 import BalanceWarningFeature from "@features/balance-warning/balance-warning.ts";
@@ -68,7 +69,7 @@ import CreatorMessagesFeature from "@features/creator-messages/creator-messages"
 import CreatorsFeature from "@features/creators/creators";
 import CrimeValueFeature from "@features/crime-value/crime-value";
 import CSVChainReportFeature from "@features/csv-chain-report/csv-chain-report";
-import CSVChallengeContributionsFeature from "@features/csv-challenge-contributions/csv-challenge-contributions";
+import { CSVChallengeContributionsFeature } from "@features/csv-challenge-contributions/csv-challenge-contributions";
 import CSVRaidReportFeature from "@features/csv-raid-report/csv-raid-report";
 import CSVRankedWarReportFeature from "@features/csv-ranked-war-report/csv-ranked-war-report";
 import CSVWarReportFeature from "@features/csv-war-report/csv-war-report";
@@ -81,6 +82,7 @@ import EasterEggsFeature from "@features/easter-eggs/easter-eggs";
 import EducationFinishTimeFeature from "@features/education-finish-time/education-finish-time";
 import EffectiveBattleStatsFeature from "@features/effective-battle-stats/effective-battle-stats";
 import EfficientRehabFeature from "@features/efficient-rehab/efficient-rehab";
+import EliminationFilterFeature from "@features/elimination-filter/elimination-filter.ts";
 import EmployeeEffectivenessFeature from "@features/employee-effectiveness/employee-effectiveness";
 import EmployeeInactivityWarningFeature from "@features/employee-inactivity-warning/employee-inactivity-warning";
 import EnemyFilterFeature from "@features/enemy-filter/enemy-filter";
@@ -167,8 +169,10 @@ import NPCLootTimesFeature from "@features/npc-loot-times/npc-loot-times";
 import OCAvailablePlayersFeature from "@features/oc-available-players/oc-available-players";
 import OCLastActionFeature from "@features/oc-last-action/oc-last-action";
 import OCNNBFeature from "@features/oc-nnb/oc-nnb";
+import OCSubmitScenariosFeature from "@features/oc-submit-scenarios/oc-submit-scenarios.ts";
 import OCTimeFeature from "@features/oc-time/oc-time";
 import OCTimesFeature from "@features/oc-times/oc-times";
+import OCWeightsFeature from "@features/oc-weights/oc-weights.ts";
 import OC2FilterFeature from "@features/oc2-filter/oc2-filter";
 import OC2TimeFeature from "@features/oc2-time/oc2-time";
 import OnlyNewFeedFeature from "@features/only-new-feed/only-new-feed";
@@ -247,7 +251,7 @@ import WeaponBonusInformationFeature from "@features/weapon-bonus-information/we
 import WeaponExperienceFeature from "@features/weapon-experience/weapon-experience";
 
 export function scriptManager() {
-	initializeDatabase();
+	void initializeDatabase();
 
 	/*
 	 * Feature Management
@@ -435,6 +439,8 @@ export function scriptManager() {
 		FEATURE_MANAGER.registerFeature(new WarFinishTimesFeature());
 		FEATURE_MANAGER.registerFeature(new WarnCrimeFeature());
 		FEATURE_MANAGER.registerFeature(new TotalChallengeContributionsFeature());
+		FEATURE_MANAGER.registerFeature(new OCWeightsFeature());
+		FEATURE_MANAGER.registerFeature(new OCSubmitScenariosFeature());
 	} else if (page === "forums") {
 		FEATURE_MANAGER.registerFeature(new AddDebugInfoFeature());
 		FEATURE_MANAGER.registerFeature(new ForumMenuFeature());
@@ -557,6 +563,9 @@ export function scriptManager() {
 		FEATURE_MANAGER.registerFeature(new CreatorMessagesFeature());
 	} else if (page === "hunting") {
 		FEATURE_MANAGER.registerFeature(new FastHuntingFeature());
+	} else if (page === "elimination") {
+		setupEliminationPage();
+		FEATURE_MANAGER.registerFeature(new EliminationFilterFeature());
 	}
 
 	if (isPageWithDrugItems(page)) {

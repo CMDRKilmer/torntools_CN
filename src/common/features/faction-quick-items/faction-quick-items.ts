@@ -2,12 +2,12 @@ import "./faction-quick-items.css";
 import { isInternalFaction } from "@common/pages/factions-page";
 import type { TornInternalArmouryTabContent } from "@common/pages/factions-page";
 import type { TornInternalUseItem } from "@common/pages/item-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { quick, settings } from "@common/utils/data/database";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import { findContainer } from "@common/utils/functions/containers";
-import { elementBuilder, findAllElements, findParent, mobile, tablet } from "@common/utils/functions/dom";
+import { elementBuilder, findParent, mobile, tablet } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -28,12 +28,12 @@ let controller: ReturnType<typeof createQuickItemsController> | undefined;
 
 const medicalSource: MedicalItemsSource = {
 	loadFromDOM: () => {
-		const medicalList = document.querySelector(".armoury-tabs[id*='medical']:has(.item-list)");
+		const medicalList = findElement(".armoury-tabs[id*='medical']:has(.item-list)", true);
 		if (!medicalList) return null;
 
 		return findAllElements(".item-list > li", medicalList).map((row) => ({
-			id: parseInt(row.querySelector<HTMLElement>(".img-wrap[data-itemid]").dataset.itemid),
-			quantity: parseInt(row.querySelector(".qty").textContent),
+			id: parseInt(findElement(".img-wrap[data-itemid]", row).dataset.itemid!),
+			quantity: parseInt(findElement(".qty", row).textContent),
 		}));
 	},
 	loadDirectly: async () => {
@@ -51,9 +51,7 @@ function addListener() {
 	initialiseQuickItems();
 
 	addCustomListener(EVENT_CHANNELS.FACTION_ARMORY_TAB, async ({ section }) => {
-		if (!FEATURE_MANAGER.isEnabled(FactionQuickItemsFeature)) return;
-
-		if (["medical", "drugs", "boosters", "points", "donate", "consumables", "loot", "utilities"].includes(section)) {
+		if (["medical", "drugs", "boosters", "points", "donate", "consumables", "loot"].includes(section)) {
 			await showQuickItems(section);
 			setupQuickDragListeners();
 			controller?.refreshEditListeners();
@@ -73,13 +71,11 @@ async function showQuickItems(section: string) {
 	controller = createQuickItemsController({
 		title: "Faction Quick Items",
 		containerClass: "mt10",
-		nextElement: () => document.querySelector("#faction-armoury > hr"),
+		nextElement: () => findElement("#faction-armoury > hr"),
 		savedItems: () => quick.factionItems,
 		getOverlayItems: () => [
 			...findAllElements("#faction-armoury-tabs .torn-tabs > li").filter((category) =>
-				["Medical", "Drugs", "Boosters", "Points", "Consumables", "Loot", "Utilities"].includes(
-					category.querySelector("a.ui-tabs-anchor").textContent.trim(),
-				),
+				["Medical", "Drugs", "Boosters", "Points", "Consumables", "Loot"].includes(findElement("a.ui-tabs-anchor", category).textContent.trim()),
 			),
 			...findAllElements(
 				".armoury-medical-wrap, .armoury-drugs-wrap, .armoury-boosters-wrap, .armoury-points-wrap, .armoury-consumables-wrap, .armoury-temporary-wrap",
@@ -87,15 +83,15 @@ async function showQuickItems(section: string) {
 		],
 		getSourceItems: () => [
 			...findAllElements(".armoury-tabs .item-list > li").filter((item) => {
-				const imgWrap = item.querySelector<HTMLElement>(".img-wrap");
+				const imgWrap = findElement(".img-wrap", item);
 
-				return allowQuickItem(imgWrap.dataset.itemid, item.querySelector(".type")?.textContent);
+				return allowQuickItem(imgWrap.dataset.itemid!, findElement(".type", item, true)?.textContent ?? null);
 			}),
 			...findAllElements("#armoury-points .give[data-role='give'], #armoury-points .give[data-role='refill']"),
 		],
 		parseSourceItem: (element) => {
-			const target = element.dataset.type === "tt-points" ? element : findParent(element, { tag: "LI" });
-			const id = target.querySelector<HTMLElement>(".img-wrap").dataset.itemid;
+			const target = element.dataset.type === "tt-points" ? element : findParent(element, { tag: "LI" })!;
+			const id = findElement(".img-wrap", target).dataset.itemid!;
 
 			return { id: parseQuickItemId(id) };
 		},
@@ -140,7 +136,7 @@ async function showQuickItems(section: string) {
 
 function setupQuickDragListeners() {
 	const enableDrag = !mobile && !tablet;
-	const tab = document.querySelector("#faction-armoury-tabs .armoury-tabs[aria-expanded='true']");
+	const tab = findElement("#faction-armoury-tabs .armoury-tabs[aria-expanded='true']");
 
 	const dragHandlers = createQuickDragHandlers({
 		containerId: "factionQuickItems",
@@ -148,10 +144,10 @@ function setupQuickDragListeners() {
 			let element = target;
 			if (!element.hasAttribute("draggable")) element = element.closest("[draggable]") ?? element;
 
-			return parseQuickItemId(element.querySelector<HTMLElement>(".img-wrap").dataset.itemid);
+			return parseQuickItemId(findElement(".img-wrap", element).dataset.itemid!);
 		},
-		addQuickItem: (item, temporary) => controller.addQuickItem(item, temporary),
-		saveQuickItems: () => controller.saveQuickItems(),
+		addQuickItem: (item, temporary) => controller!.addQuickItem(item, temporary),
+		saveQuickItems: () => controller!.saveQuickItems(),
 	});
 
 	if (tab.id === "tab=armoury&sub=points") {
@@ -176,9 +172,9 @@ function setupQuickDragListeners() {
 		}
 	} else {
 		for (const item of findAllElements(".item-list > li", tab)) {
-			const imgWrap = item.querySelector<HTMLElement>(".img-wrap");
+			const imgWrap = findElement(".img-wrap", item);
 
-			if (!allowQuickItem(parseInt(imgWrap.dataset.itemid), item.querySelector(".type")?.textContent)) continue;
+			if (!allowQuickItem(parseInt(imgWrap.dataset.itemid!), findElement(".type", item, true)?.textContent ?? null)) continue;
 
 			if (enableDrag) {
 				item.setAttribute("draggable", "true");
@@ -286,7 +282,7 @@ async function useQuickItem({ id }: QuickItem, context: UseContext) {
 function allowQuickItem(id: QuickItemId, category: string | null) {
 	return (
 		isSpecialAction(id) ||
-		["Medical", "Drug", "Energy Drink", "Alcohol", "Candy", "Booster"].includes(category) ||
+		["Medical", "Drug", "Energy Drink", "Alcohol", "Candy", "Booster"].includes(category ?? "") ||
 		id === "points-energy" ||
 		id === "points-nerve"
 	);

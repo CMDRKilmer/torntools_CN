@@ -1,13 +1,13 @@
 import "./oc-nnb.css";
 import { isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { ttCache } from "@common/utils/data/cache";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData, hasOC1Data } from "@common/utils/functions/api";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import type { TornstatsFactionCrimes, YATAFactionMembers } from "@common/utils/functions/api.types";
-import { elementBuilder, findAllElements, mobile } from "@common/utils/functions/dom";
+import { elementBuilder, mobile } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { TO_MILLIS } from "@common/utils/functions/utilities";
 import { Feature } from "@features/feature";
@@ -25,15 +25,11 @@ interface NNBInformation {
 }
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.FACTION_CRIMES, async () => {
-		if (!FEATURE_MANAGER.isEnabled(OCNNBFeature)) return;
-
-		await showNNB();
-	});
+	addCustomListener(EVENT_CHANNELS.FACTION_CRIMES, showNNB);
 }
 
 async function startFeature() {
-	if (!document.querySelector(".faction-crimes-wrap")) return;
+	if (!findElement(".faction-crimes-wrap", true)) return;
 
 	await showNNB();
 }
@@ -59,7 +55,7 @@ async function showNNB() {
 		async function loadTornstats() {
 			let result: TornstatsFactionCrimes;
 			if (ttCache.hasValue("crimes", "tornstats")) {
-				result = ttCache.get<TornstatsFactionCrimes>("crimes", "tornstats");
+				result = ttCache.get<TornstatsFactionCrimes>("crimes", "tornstats")!;
 			} else {
 				try {
 					result = await fetchData<TornstatsFactionCrimes>("tornstats", { section: "faction/crimes", relay: true });
@@ -97,7 +93,7 @@ async function showNNB() {
 		async function loadYATA() {
 			let result: YATAFactionMembers;
 			if (ttCache.hasValue("crimes", "yata")) {
-				result = ttCache.get<YATAFactionMembers>("crimes", "yata");
+				result = ttCache.get<YATAFactionMembers>("crimes", "yata")!;
 			} else {
 				try {
 					result = await fetchData<YATAFactionMembers>("yata", { section: "faction/crimes/export", includeKey: true, relay: true });
@@ -129,9 +125,9 @@ async function showNNB() {
 		for (const row of findAllElements(".organize-wrap .crimes-list .details-list > li > ul")) {
 			findAllElements(`.level${mobile ? ", .member, .stat" : ""}`, row).forEach((element) => element.classList.add("tt-modified"));
 
-			const stat = row.querySelector(".stat");
+			const stat = findElement(".stat", row);
 			if (row.classList.contains("title")) {
-				stat.parentElement.insertBefore(
+				stat.parentElement!.insertBefore(
 					elementBuilder({
 						type: "li",
 						class: "tt-nnb",
@@ -143,7 +139,7 @@ async function showNNB() {
 				continue;
 			}
 
-			const id = row.querySelector(".h").getAttribute("href").split("XID=")[1];
+			const id = findElement(".h", row).getAttribute("href")!.split("XID=")[1];
 			if (typeof data === "object" && id in data) {
 				const { nnb, verified } = data[id];
 
@@ -158,9 +154,9 @@ async function showNNB() {
 		for (const row of findAllElements(".plans-list .item")) {
 			findAllElements(`.offences${mobile ? ", .member, .level, .act" : ""}`, row).forEach((element) => element.classList.add("tt-modified"));
 
-			const act = row.querySelector(".act");
+			const act = findElement(".act", row);
 			if (row.classList.contains("title")) {
-				act.parentElement.insertBefore(
+				act.parentElement!.insertBefore(
 					elementBuilder({
 						type: "li",
 						class: "tt-nnb short",
@@ -172,7 +168,7 @@ async function showNNB() {
 				continue;
 			}
 
-			const id = row.querySelector(".h").getAttribute("href").split("XID=")[1];
+			const id = findElement(".h", row).getAttribute("href")!.split("XID=")[1];
 			if (typeof data === "object" && id in data) {
 				const { nnb, verified } = data[id];
 

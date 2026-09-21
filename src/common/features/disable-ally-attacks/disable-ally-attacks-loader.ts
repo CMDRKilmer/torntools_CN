@@ -1,9 +1,9 @@
 import "./disable-ally-attacks.css";
 import { isAttackData } from "@common/pages/attack-loader-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { elementBuilder, mobile, tablet } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { addFetchListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus, isOwnProfile } from "@common/utils/functions/torn";
@@ -13,10 +13,10 @@ let closedOption = false;
 
 async function startListener() {
 	addFetchListener(({ detail: { page, json, fetch } }) => {
-		if (closedOption || !FEATURE_MANAGER.isEnabled(DisableAllyAttacksLoaderFeature) || page !== "page") return;
+		if (closedOption || page !== "page") return;
 
 		const params = new URL(fetch.url).searchParams;
-		const sid = params.get("sid");
+		const sid = params.get("sid")!;
 
 		if (!isAttackData(sid, json)) return;
 		if (!json.DB.defenderUser.factionID || json.viewStyle !== "nonAttack") return;
@@ -27,7 +27,7 @@ async function startListener() {
 
 async function disableAttackButton(factionID: number | null) {
 	if (!factionID) return;
-	if (document.querySelector(".tt-disable-ally-attack")) return;
+	if (findElement(".tt-disable-ally-attack", true)) return;
 
 	const selector =
 		mobile || tablet

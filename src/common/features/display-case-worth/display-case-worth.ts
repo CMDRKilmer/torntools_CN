@@ -1,9 +1,9 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import type { UserV1DisplayCaseResponse } from "@common/utils/functions/api-v1.types";
 import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
@@ -13,21 +13,16 @@ import styles from "./display-case-worth.module.css";
 
 function xhrListener() {
 	addXHRListener(async ({ detail: { page, xhr } }) => {
-		if (
-			FEATURE_MANAGER.isEnabled(DisplayCaseWorthFeature) &&
-			page === "displaycase" &&
-			(xhr.requestBody === "step=display" || xhr.requestBody.startsWith("userID="))
-		)
-			await addWorth();
+		if (page === "displaycase" && (xhr.requestBody === "step=display" || xhr.requestBody.startsWith("userID="))) await addWorth();
 	});
 }
 
 async function addWorth() {
-	const hashId = location.hash.split("/").length > 1 ? location.hash.split("/").at(-1) : "";
+	const hashId = location.hash.split("/").length > 1 ? location.hash.split("/").at(-1)! : "";
 
-	let userId: number | null = null;
+	let userId: number | undefined;
 	const details = getUserDetails();
-	if (!hashId || (!Number.isNaN(hashId) && parseInt(hashId) !== details.id)) userId = parseInt(hashId);
+	if (!hashId || (!Number.isNaN(hashId) && ("error" in details || parseInt(hashId) !== details.id))) userId = parseInt(hashId);
 
 	let result: UserV1DisplayCaseResponse | undefined;
 	try {
@@ -48,7 +43,7 @@ async function addWorth() {
 }
 
 async function displayValue(isOwn: boolean, value: number) {
-	document.querySelector(`.${styles.displayWorth}`)?.remove();
+	findElement(`.${styles.displayWorth}`, true)?.remove();
 
 	let element: Element;
 	if (isOwn) {
@@ -85,7 +80,7 @@ async function displayElement(isOwn: boolean, element: Element) {
 	} else {
 		await requireElement(".info-msg-cont .ajax-preloader", { invert: true });
 
-		document.querySelector(".info-msg-cont .msg").appendChild(element);
+		findElement(".info-msg-cont .msg").appendChild(element);
 	}
 }
 

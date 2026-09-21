@@ -1,18 +1,16 @@
 import "./can-energy.css";
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { getPageStatus, isEventActive, TORN_EVENTS } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
 
 function initialiseAddEGains() {
-	const listener = () => {
-		if (FEATURE_MANAGER.isEnabled(CanEnergyFeature)) addEnergyGains();
-	};
-	addCustomListener(EVENT_CHANNELS.ITEM_ITEMS_LOADED, listener);
-	addCustomListener(EVENT_CHANNELS.ITEM_SWITCH_TAB, listener);
+	addCustomListener(EVENT_CHANNELS.ITEM_ITEMS_LOADED, addEnergyGains);
+	addCustomListener(EVENT_CHANNELS.ITEM_SWITCH_TAB, addEnergyGains);
 }
 
 function addEnergyGains() {
@@ -23,16 +21,16 @@ function addEnergyGains() {
 		.reduce((totalMultiplier, perkMultiplier) => totalMultiplier * perkMultiplier, 1);
 
 	findAllElements("[data-category='Energy Drink']").forEach((eCanElement) => {
-		if (eCanElement.querySelector(".tt-e-gains")) return;
+		if (findElement(".tt-e-gains", eCanElement, true)) return;
 
-		const item = ITEM_RESOLVER.getStaticItem(parseInt(eCanElement.dataset.item));
+		const item = ITEM_RESOLVER.getStaticItem(parseInt(eCanElement.dataset.item!));
 		if (!item) return;
 
 		const baseEnergy = parseInt(
-			item.effect
-				.split(" ")
+			item
+				.effect!.split(" ")
 				.map((x) => parseInt(x))
-				.find((x) => !Number.isNaN(x))
+				.find((x) => !Number.isNaN(x))!
 				.toString(),
 		);
 		let totalEnergy = Math.round(baseEnergy * totalPerkMultiplier);
@@ -41,9 +39,10 @@ function addEnergyGains() {
 			totalEnergy *= 2;
 		}
 
-		eCanElement
-			.querySelector(".name-wrap")
-			.insertAdjacentElement("beforeend", elementBuilder({ type: "span", class: "tt-e-gains", text: `${totalEnergy}E` }));
+		findElement(".name-wrap", eCanElement).insertAdjacentElement(
+			"beforeend",
+			elementBuilder({ type: "span", class: "tt-e-gains", text: `${totalEnergy}E` }),
+		);
 	});
 }
 

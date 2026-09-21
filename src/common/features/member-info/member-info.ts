@@ -1,12 +1,12 @@
 import "./member-info.css";
 import { isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { ttCache } from "@common/utils/data/cache";
 import { settings, userdata } from "@common/utils/data/database";
 import { hasFactionAPIAccess } from "@common/utils/functions/api";
 import { fetchData } from "@common/utils/functions/api-fetcher";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getUsername } from "@common/utils/functions/torn";
@@ -17,39 +17,33 @@ import type { FactionBalance, FactionBalanceResponse } from "tornapi-typescript"
 let lastActionState: boolean;
 
 function addListener() {
-	addCustomListener(EVENT_CHANNELS.FACTION_INFO, async () => {
-		if (!FEATURE_MANAGER.isEnabled(MemberInfoFeature)) return;
-
-		await addInfo(true);
-	});
+	addCustomListener(EVENT_CHANNELS.FACTION_INFO, () => addInfo(true));
 	addCustomListener(EVENT_CHANNELS.FEATURE_ENABLED, async ({ name }) => {
-		if (!FEATURE_MANAGER.isEnabled(MemberInfoFeature) || name !== "Last Action") return;
+		if (name !== "Last Action") return;
 
 		lastActionState = true;
 		await addInfo(true);
 	});
 	addCustomListener(EVENT_CHANNELS.FEATURE_RELOADED, async ({ name }) => {
-		if (!FEATURE_MANAGER.isEnabled(MemberInfoFeature) || name !== "Last Action") return;
+		if (name !== "Last Action") return;
 
 		lastActionState = true;
 		await addInfo(true);
 	});
 	addCustomListener(EVENT_CHANNELS.FACTION_NATIVE_FILTER, async ({ hasResults }) => {
-		if (!FEATURE_MANAGER.isEnabled(MemberInfoFeature)) return;
-
 		removeInfo();
 		if (hasResults) await addInfo(true);
 	});
 	addCustomListener(EVENT_CHANNELS.FACTION_NATIVE_SORT, async () => {
-		if (!FEATURE_MANAGER.isEnabled(MemberInfoFeature)) return;
-
 		removeInfo();
 		await addInfo(true);
 	});
 }
 
 async function addInfo(force: boolean) {
-	if (!force || lastActionState) return;
+	if (!userdata.faction) return;
+	if (!force || lastActionState || !userdata.faction) return;
+
 	removeInfo();
 
 	await requireElement(".members-list .table-body > li");
@@ -57,7 +51,7 @@ async function addInfo(force: boolean) {
 
 	let balance: FactionBalance;
 	if (ttCache.hasValue("faction-members-balance", userdata.faction.id)) {
-		balance = ttCache.get<FactionBalance>("faction-members-balance", userdata.faction.id);
+		balance = ttCache.get<FactionBalance>("faction-members-balance", userdata.faction.id)!;
 	} else {
 		balance = (await fetchData<FactionBalanceResponse>("tornv2", { section: "faction", selections: ["balance"], silent: true })).balance;
 
@@ -75,12 +69,12 @@ async function addInfo(force: boolean) {
 		if (!userBalance || (!userBalance.points && !userBalance.money)) return;
 
 		// Don't show this for fallen players.
-		if (li.querySelector(".icons li[id*='icon77___']")) return;
+		if (findElement(".icons li[id*='icon77___']", li, true)) return;
 
-		const nextSibling = li.nextSibling as HTMLElement | undefined;
+		const nextSibling = li.nextSibling as HTMLElement | null;
 
 		const memberInfo = elementBuilder({ type: "div", class: "tt-member-info" });
-		const parent = lastActionState && nextSibling?.className?.includes("tt-last-action") ? li.nextSibling : memberInfo;
+		const parent = lastActionState && nextSibling?.className?.includes("tt-last-action") ? nextSibling : memberInfo;
 
 		if (userBalance.points) {
 			parent.appendChild(

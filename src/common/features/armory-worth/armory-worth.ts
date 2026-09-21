@@ -1,5 +1,5 @@
 import { isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import "./armory-worth.css";
 import { ttCache } from "@common/utils/data/cache";
 import { settings, torndata, userdata } from "@common/utils/data/database";
@@ -16,6 +16,7 @@ import type {
 } from "@common/utils/functions/api-v1.types";
 import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { TO_MILLIS } from "@common/utils/functions/utilities";
@@ -33,15 +34,11 @@ type ArmoryWorthFetchResponse = FactionV1WeaponsResponse &
 	FactionBasicResponse;
 
 function addListener() {
-	addCustomListener(EVENT_CHANNELS.FACTION_INFO, async () => {
-		if (!FEATURE_MANAGER.isEnabled(ArmoryWorthFeature)) return;
-
-		await addWorth();
-	});
+	addCustomListener(EVENT_CHANNELS.FACTION_INFO, addWorth);
 }
 
 async function addWorth() {
-	document.querySelector(".tt-armory-worth")?.remove();
+	findElement(".tt-armory-worth", true)?.remove();
 
 	const moneyLi = (await requireElement("#faction-info .f-info > li")).parentElement!;
 	const selections = ["basic", "balance"];

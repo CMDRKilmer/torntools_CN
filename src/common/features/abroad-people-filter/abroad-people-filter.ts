@@ -1,4 +1,4 @@
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { addCustomListener, EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
@@ -12,6 +12,7 @@ import {
 	sliderSection,
 } from "@common/utils/functions/filters";
 import type { DuoCheckboxState, FilterController } from "@common/utils/functions/filters";
+import { findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { extractFactionsFromPage, isAbroad, SPECIAL_FILTER_ICONS } from "@common/utils/functions/torn";
@@ -20,16 +21,8 @@ import { Feature } from "@features/feature";
 let filter: FilterController;
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.STATS_ESTIMATED, async ({ row }) => {
-		if (!FEATURE_MANAGER.isEnabled(AbroadPeopleFilterFeature)) return;
-
-		await filter?.runScoped({ rows: [row], sections: ["statsEstimates"] });
-	});
-	addCustomListener(EVENT_CHANNELS.FF_SCOUTER_GAUGE, async () => {
-		if (!FEATURE_MANAGER.isEnabled(AbroadPeopleFilterFeature)) return;
-
-		await filter?.runScoped({ sections: ["ffScore"] });
-	});
+	addCustomListener(EVENT_CHANNELS.STATS_ESTIMATED, ({ row }) => filter?.runScoped({ rows: [row], sections: ["statsEstimates"] }));
+	addCustomListener(EVENT_CHANNELS.FF_SCOUTER_GAUGE, () => filter?.runScoped({ sections: ["ffScore"] }));
 }
 
 type AbroadPeopleFilterState = {
@@ -90,7 +83,7 @@ async function addFilterContainer() {
 			test: (row, status) => {
 				if (!status.length || status.length === 2) return true;
 
-				const rowStatus = row.querySelector<HTMLElement>(".status :last-child")!.textContent.toLowerCase().trim();
+				const rowStatus = findElement(".status :last-child", row).textContent.toLowerCase().trim();
 				return status.includes(rowStatus);
 			},
 		}),
@@ -102,7 +95,7 @@ async function addFilterContainer() {
 			defaults: { low: filters.abroadPeople.levelStart, high: filters.abroadPeople.levelEnd },
 			formatCounter: (r) => `Level ${r.start} - ${r.end}`,
 			test: (row, range) => {
-				const level = convertToNumber(row.querySelector(".level")!.textContent);
+				const level = convertToNumber(findElement(".level", row).textContent);
 
 				if (range.start && level < range.start) return false;
 				if (range.end !== 100 && level > range.end) return false;
@@ -129,7 +122,7 @@ async function addFilterContainer() {
 		container: {
 			title: "People Filter",
 			class: "mt10",
-			nextElement: document.querySelector(".users-list-title")!,
+			nextElement: findElement(".users-list-title"),
 		},
 		statisticsLabel: "players",
 		enabled: filters.abroadPeople.enabled,

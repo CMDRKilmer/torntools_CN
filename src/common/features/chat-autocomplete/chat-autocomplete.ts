@@ -1,7 +1,7 @@
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { checkDevice, findAllElements } from "@common/utils/functions/dom";
+import { checkDevice } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireChatsLoaded, requireElement } from "@common/utils/functions/requires";
 import { REACT_UPDATE_VERSIONS, updateReactInput } from "@common/utils/functions/torn";
 import {
@@ -15,16 +15,8 @@ import {
 import { Feature } from "@features/feature";
 
 function initialiseAutocomplete() {
-	addCustomListener(EVENT_CHANNELS.CHAT_OPENED, async ({ chat }) => {
-		if (!FEATURE_MANAGER.isEnabled(ChatAutocompleteFeature)) return;
-
-		await addAutocomplete(chat);
-	});
-	addCustomListener(EVENT_CHANNELS.CHAT_RECONNECTED, async () => {
-		if (!FEATURE_MANAGER.isEnabled(ChatAutocompleteFeature)) return;
-
-		await readSettings();
-	});
+	addCustomListener(EVENT_CHANNELS.CHAT_OPENED, ({ chat }) => addAutocomplete(chat));
+	addCustomListener(EVENT_CHANNELS.CHAT_RECONNECTED, readSettings);
 }
 
 async function readSettings() {
@@ -46,7 +38,7 @@ async function addAutocomplete(chat: HTMLElement) {
 	);
 	if (!messages.length) return;
 
-	const textarea = chat.querySelector<HTMLTextAreaElement>("textarea:not(.tt-chat-autocomplete)");
+	const textarea = findElement<HTMLTextAreaElement>("textarea:not(.tt-chat-autocomplete)", chat, true);
 	if (!textarea) return;
 	textarea.classList.add("tt-chat-autocomplete");
 
@@ -60,13 +52,12 @@ async function addAutocomplete(chat: HTMLElement) {
 		event.preventDefault();
 
 		const valueBeforeCursor = textarea.value.slice(0, textarea.selectionStart);
-		const searchValueMatch = valueBeforeCursor.match(/([^A-Za-z\d\-_]?)([A-Za-z\d\-_]*)$/);
-
+		const searchValueMatch = valueBeforeCursor.match(/([^A-Za-z\d\-_]?)([A-Za-z\d\-_]*)$/)!;
 		if (currentSearchValue === null) currentSearchValue = searchValueMatch[2].toLowerCase();
 
 		const matchedUsernames = findAllElements(`${SELECTOR_CHAT_V2__MESSAGE_SENDER}, ${SELECTOR_CHAT_V3__MESSAGE_SENDER}`, chat)
 			.map((message) => message.textContent.split(":")[0])
-			.filter((username, index, array) => array.indexOf(username) === index && username.toLowerCase().startsWith(currentSearchValue))
+			.filter((username, index, array) => array.indexOf(username) === index && username.toLowerCase().startsWith(currentSearchValue!))
 			.sort();
 		if (!matchedUsernames.length) return;
 
@@ -75,7 +66,7 @@ async function addAutocomplete(chat: HTMLElement) {
 
 		currentUsername = matchedUsernames[index];
 
-		const valueStart = searchValueMatch.index + searchValueMatch[1].length;
+		const valueStart = (searchValueMatch.index ?? 0) + (searchValueMatch[1].length ?? 0);
 		updateReactInput(textarea, textarea.value.slice(0, valueStart) + currentUsername + textarea.value.slice(valueBeforeCursor.length), {
 			version: REACT_UPDATE_VERSIONS.DOUBLE_DEFAULT,
 		});

@@ -12,8 +12,9 @@ import type { TextboxWithoutDescriptionFilter } from "@common/utils/elements/tex
 import { hasAPIData } from "@common/utils/functions/api";
 import { createContainer, removeContainer } from "@common/utils/functions/containers";
 import type { ContainerOptions, ContainerPosition } from "@common/utils/functions/containers";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { createFilterPresets } from "@common/utils/functions/filter-presets";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { camelCase } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { RANK_TRIGGERS, WEAPON_BONUSES } from "@common/utils/functions/torn";
@@ -73,7 +74,7 @@ export const FILTER_REGEXES = {
 export type UserActivityStatus = Lowercase<UserLastActionStatusEnum>;
 
 export function getUserActivity(element: ParentNode): UserActivityStatus | "" {
-	const icon = element.querySelector("[class*='userOnlineStatusIcon___']");
+	const icon = findElement("[class*='userOnlineStatusIcon___']", element, true);
 	if (icon) {
 		const label = icon?.getAttribute("alt") || icon.closest("[aria-label]")?.getAttribute("aria-label");
 		const labelMatch = label?.match(/\b(online|idle|offline)\b/i);
@@ -82,7 +83,7 @@ export function getUserActivity(element: ParentNode): UserActivityStatus | "" {
 		}
 	}
 
-	const title = element.querySelector("#iconTray li")?.getAttribute("title");
+	const title = findElement("#iconTray li", element, true)?.getAttribute("title");
 	const titleMatch = title?.match(FILTER_REGEXES.activity);
 	if (titleMatch) {
 		return titleMatch[0].toLowerCase().trim() as UserActivityStatus;
@@ -165,8 +166,8 @@ export function createStatistics(name = "entries", addBrackets = false, lowercas
 	});
 
 	function updateStatistics(count: number, total: number, content: HTMLElement) {
-		content.querySelector(".statistics .stat-count")!.textContent = count.toString();
-		content.querySelector(".statistics .stat-total")!.textContent = total.toString();
+		findElement(".statistics .stat-count", content).textContent = count.toString();
+		findElement(".statistics .stat-total", content).textContent = total.toString();
 	}
 
 	return { element: statistics, updateStatistics };
@@ -486,7 +487,7 @@ export function selectorExemption(options: { key: string; selector: string; prio
 		title: "",
 		isExemption: true,
 		priority: options.priority ?? 0,
-		test: (row) => !!row.querySelector(options.selector),
+		test: (row) => !!findElement(options.selector, row, true),
 	};
 }
 
@@ -666,14 +667,14 @@ export function presetSection(options: PresetSectionOptions): FilterSectionDef<u
 			test: (row, faction) => {
 				if (!faction) return true;
 
-				const factionElement = row.querySelector<HTMLAnchorElement>(".user.faction")!;
+				const factionElement = findElement<HTMLAnchorElement>(".user.faction", row);
 				const hasFaction = !!factionElement.href;
 
 				if (faction === "No faction") return !hasFaction;
 				if (faction === "In a faction") return hasFaction;
 
 				const factionName = factionElement.hasAttribute("rel")
-					? factionElement.querySelector<HTMLImageElement>(":scope > img")?.getAttribute("title")?.trim() || "N/A"
+					? findElement(":scope > img", factionElement, true)?.getAttribute("title")?.trim() || "N/A"
 					: factionElement.textContent.trim();
 
 				if (faction === "Unknown faction") return hasFaction && factionName === "N/A";
@@ -724,15 +725,15 @@ export function presetSection(options: PresetSectionOptions): FilterSectionDef<u
 				};
 			},
 			test: (row, { min, max }) => {
-				let ff: number;
+				let ff: number | undefined;
 
 				if (row.dataset.ffScout) ff = parseFloat(row.dataset.ffScout);
 				else {
-					const gauge = row.querySelector<HTMLElement>(".tt-ff-scouter-indicator.indicator-lines");
+					const gauge = findElement(".tt-ff-scouter-indicator.indicator-lines", row, true);
 					if (gauge) ff = parseFloat(gauge.getAttribute("data-ff-scout")!);
 				}
 
-				if (Number.isNaN(ff) || ff < 0) return true;
+				if (ff === undefined || Number.isNaN(ff) || ff < 0) return true;
 
 				if (max && !Number.isNaN(max) && ff > max) return false;
 				if (min && !Number.isNaN(min) && ff < min) return false;
@@ -820,6 +821,9 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 		}
 	}
 
+	let lastCompensateHiddenCount = -1;
+	let lastCompensateMinHeight: string | null = null;
+
 	/**
 	 * Prevents infinite-scroll from triggering when rows are hidden and the list shrinks.
 	 * Pads just enough so the visible content extends 200px past the viewport bottom,
@@ -834,9 +838,13 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 
 		const hiddenCount = rows.filter((r) => r.classList.contains("tt-hidden")).length;
 		if (hiddenCount === 0) {
-			delete list.style.minHeight;
+			list.style.minHeight = "";
+			lastCompensateHiddenCount = 0;
+			lastCompensateMinHeight = "";
 			return;
 		}
+
+		if (hiddenCount === lastCompensateHiddenCount && list.style.minHeight === lastCompensateMinHeight) return;
 
 		const listTop = list.getBoundingClientRect().top;
 		const visibleHeight = (rows.length - hiddenCount) * rowHeight;
@@ -847,7 +855,9 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 		const target = viewportHeight + buffer;
 
 		if (contentBottom >= target) {
-			delete list.style.minHeight;
+			list.style.minHeight = "";
+			lastCompensateHiddenCount = hiddenCount;
+			lastCompensateMinHeight = "";
 			return;
 		}
 
@@ -856,6 +866,8 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 		const naturalHeight = rows.length * rowHeight;
 
 		list.style.minHeight = `${Math.min(compensated, naturalHeight)}px`;
+		lastCompensateHiddenCount = hiddenCount;
+		lastCompensateMinHeight = list.style.minHeight;
 	}
 
 	function applyFilter(rows: HTMLElement[], activeSections: FilterSectionInstance[], values: Map<string, unknown>): void {
@@ -877,7 +889,7 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 				}
 			}
 
-			if (activeSectionReasons.includes(row.dataset.hideReason)) {
+			if (row.dataset.hideReason && activeSectionReasons.includes(row.dataset.hideReason)) {
 				row.classList.remove("tt-hidden");
 				_toggleSiblings(row, false);
 				delete row.dataset.hideReason;
@@ -908,12 +920,12 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 		}
 
 		if (!enabled) {
-			findAllElements(`${rowSelector}.tt-hidden`).forEach((row) => {
+			const allRows = findAllElements(rowSelector);
+			for (const row of allRows) {
 				row.classList.remove("tt-hidden");
 				delete row.dataset.hideReason;
-			});
-			_compensateHeight(findAllElements(rowSelector));
-			const allRows = findAllElements(rowSelector);
+			}
+			_compensateHeight(allRows);
 			statistics.updateStatistics(allRows.length, allRows.length, content);
 			await onAfterRun?.();
 			return;
@@ -931,7 +943,8 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 
 	async function runScoped(options?: { rows?: HTMLElement[]; sections?: string[] | null }) {
 		const scopedRows = options?.rows ?? findAllElements(rowSelector);
-		const activeSections = options?.sections ? sections.filter((s) => options.sections.includes(s.key)) : sections;
+		const requestedSections = options?.sections;
+		const activeSections = requestedSections ? sections.filter((s) => requestedSections.includes(s.key)) : sections;
 		activeSections.sort((a, b) => a.priority - b.priority);
 
 		activeSections.forEach((s) => s.onBeforeFilter?.());
@@ -1050,7 +1063,7 @@ export function createFilter<State extends Record<string, unknown> & { enabled: 
 			if ("parentElement" in position) parentElement = position.parentElement;
 			else if ("nextElement" in position) parentElement = position.nextElement.parentElement!;
 			else if ("previousElement" in position) parentElement = position.previousElement.parentElement!;
-			else parentElement = document.querySelector(".content-wrapper")!;
+			else parentElement = findElement(".content-wrapper");
 
 			if ("nextElement" in position) parentElement.insertBefore(container, position.nextElement);
 			else if ("previousElement" in position) parentElement.insertBefore(container, position.previousElement.nextSibling);

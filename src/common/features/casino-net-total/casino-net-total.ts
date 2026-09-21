@@ -1,7 +1,7 @@
 import "./casino-net-total.css";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { elementBuilder, isElement } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPage, getPageStatus } from "@common/utils/functions/torn";
@@ -12,7 +12,7 @@ const page = getPage();
 function initialiseListener() {
 	if (isBookie()) {
 		window.addEventListener("hashchange", async () => {
-			if (FEATURE_MANAGER.isEnabled(CasinoNetTotalFeature) && location.hash.includes("stats/")) {
+			if (location.hash.includes("stats/")) {
 				await addTotal();
 			}
 		});
@@ -41,16 +41,16 @@ async function addTotal() {
 			null,
 		);
 		if (moneyElementsList.snapshotLength !== 2) continue;
-		const totalWon = parseInt(moneyElementsList.snapshotItem(0).textContent.replaceAll(/[$, ]/g, ""));
+		const totalWon = parseInt(moneyElementsList.snapshotItem(0)!.textContent!.replaceAll(/[$, ]/g, ""));
 		const totalLostElement = moneyElementsList.snapshotItem(1);
 		if (!isElement(totalLostElement)) return;
 
 		const totalLost = parseInt(totalLostElement.textContent.replaceAll(/[$, ]/g, ""));
 
-		if (document.querySelector(`.${statsType}-stats-wrap .tt-net-total`)) return;
+		if (findElement(`.${statsType}-stats-wrap .tt-net-total`, true)) return;
 
 		await requireElement(`.stats-wrap .${statsType}-stats-wrap .stat`);
-		totalLostElement.closest("li:not(.stat-value)").insertAdjacentElement(
+		totalLostElement.closest("li:not(.stat-value)")!.insertAdjacentElement(
 			"afterend",
 			elementBuilder({
 				type: "ul",

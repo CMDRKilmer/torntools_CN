@@ -1,9 +1,9 @@
 import "./member-inactivity-warning.css";
 import { isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { findAllElements } from "@common/utils/functions/dom";
+import { isHTMLElement } from "@common/utils/functions/dom.ts";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber, dropDecimals } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { Feature } from "@features/feature";
@@ -12,30 +12,21 @@ let lastActionState: boolean;
 
 function addListener() {
 	if (isInternalFaction) {
-		addCustomListener(EVENT_CHANNELS.FACTION_INFO, async () => {
-			if (!FEATURE_MANAGER.isEnabled(FactionInactivityWarningFeature)) return;
-
-			await addWarning(true);
-		});
+		addCustomListener(EVENT_CHANNELS.FACTION_INFO, () => addWarning(true));
 	}
 	addCustomListener(EVENT_CHANNELS.FEATURE_ENABLED, async ({ name }) => {
-		if (!FEATURE_MANAGER.isEnabled(FactionInactivityWarningFeature) || name !== "Last Action") return;
+		if (name !== "Last Action") return;
 
 		lastActionState = true;
 		await addWarning(true);
 	});
 	addCustomListener(EVENT_CHANNELS.FEATURE_RELOADED, async ({ name }) => {
-		if (!FEATURE_MANAGER.isEnabled(FactionInactivityWarningFeature) || name !== "Last Action") return;
+		if (name !== "Last Action") return;
 
 		lastActionState = true;
 		await addWarning(true);
 	});
-
-	addCustomListener(EVENT_CHANNELS.FACTION_NATIVE_FILTER, async () => {
-		if (!FEATURE_MANAGER.isEnabled(FactionInactivityWarningFeature)) return;
-
-		await addWarning(true);
-	});
+	addCustomListener(EVENT_CHANNELS.FACTION_NATIVE_FILTER, () => addWarning(true));
 }
 
 async function addWarning(force: boolean) {
@@ -44,11 +35,11 @@ async function addWarning(force: boolean) {
 	await requireElement(".tt-last-action");
 
 	for (const row of findAllElements(".members-list .table-body > li")) {
-		if (!row.nextElementSibling.classList.contains("tt-last-action")) continue;
+		if (!isHTMLElement(row.nextElementSibling) || !row.nextElementSibling.classList.contains("tt-last-action")) continue;
 		// Skip users that are confirmed to be dead IRL.
-		if (row.querySelector("[id*='icon77___']")) continue;
+		if (findElement("[id*='icon77___']", row, true)) continue;
 
-		const days = dropDecimals(convertToNumber(row.nextElementSibling.getAttribute("hours")) / 24);
+		const days = dropDecimals(convertToNumber(row.nextElementSibling.dataset.hours) / 24);
 
 		for (const warning of settings.factionInactivityWarning) {
 			if (warning.days === null || days < warning.days) continue;

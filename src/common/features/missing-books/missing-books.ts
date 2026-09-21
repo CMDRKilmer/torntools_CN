@@ -1,7 +1,8 @@
-import { FEATURE_MANAGER, ITEM_RESOLVER } from "@common/utils/context";
+import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -9,7 +10,7 @@ import styles from "./missing-books.module.css";
 
 function initialiseBooks() {
 	addCustomListener(EVENT_CHANNELS.ITEM_SWITCH_TAB, async ({ tab }) => {
-		if (!FEATURE_MANAGER.isEnabled(MissingBooksFeature) || tab !== "Book") {
+		if (tab !== "Book") {
 			removeBooks();
 			return;
 		}
@@ -27,7 +28,7 @@ async function showBooks() {
 	const currentItemsElements = findAllElements(`#category-wrap > #books-items[aria-expanded='true'] > li[data-item]`);
 	if (!currentItemsElements.length || currentItemsElements.length === books.length) return;
 
-	const currentItems = currentItemsElements.map((x) => parseInt(x.dataset.item));
+	const currentItems = currentItemsElements.map((x) => parseInt(x.dataset.item!));
 	const needed = books.filter((x) => !currentItems.some((y) => x.id === y)).sort((a, b) => a.name.localeCompare(b.name));
 	if (!needed.length) return;
 
@@ -50,11 +51,11 @@ async function showBooks() {
 		),
 	});
 
-	document.querySelector(".main-items-cont-wrap").insertAdjacentElement("afterend", wrapper);
+	findElement(".main-items-cont-wrap").insertAdjacentElement("afterend", wrapper);
 }
 
 function removeBooks() {
-	document.getElementById("missing-books")?.remove();
+	findElement("#missing-books", true)?.remove();
 }
 
 export class MissingBooksFeature extends Feature {

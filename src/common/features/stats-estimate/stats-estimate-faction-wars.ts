@@ -1,9 +1,9 @@
 import { isDestroyed, isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { getHashParameters, isElement } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -15,11 +15,7 @@ let observer: MutationObserver | undefined;
 
 function registerListeners() {
 	if (isInternalFaction) {
-		addCustomListener(EVENT_CHANNELS.FACTION_MAIN, () => {
-			if (!FEATURE_MANAGER.isEnabled(StatsEstimateFactionWarsFeature)) return;
-
-			observeWars();
-		});
+		addCustomListener(EVENT_CHANNELS.FACTION_MAIN, observeWars);
 	}
 }
 
@@ -42,7 +38,7 @@ function observeWars() {
 			if (
 				!mutations.some((mutation) =>
 					Array.from(mutation.addedNodes).some(
-						(node) => isElement(node) && node.classList.contains("descriptions") && node.querySelector(".enemy-faction"),
+						(node) => isElement(node) && node.classList.contains("descriptions") && findElement(".enemy-faction", node, true),
 					),
 				)
 			)
@@ -86,11 +82,11 @@ function showEstimates() {
 	requireElement(".faction-war .members-list").then(() => {
 		statsEstimate.clearQueue();
 		statsEstimate.showEstimates(".faction-war .members-list > li.enemy, .faction-war .members-list > li.your", (row) => {
-			const anchorMatch = row.querySelector<HTMLAnchorElement>(".user.name, [class*='honorWrap___']").href.match(/.*XID=(?<id>\d+)/);
+			const anchorMatch = findElement<HTMLAnchorElement>(".user.name, [class*='honorWrap___']", row).href.match(/.*XID=(?<id>\d+)/);
 
 			return {
-				id: parseInt(anchorMatch.groups.id),
-				level: parseInt(row.querySelector(".level").textContent.trim()),
+				id: parseInt(anchorMatch!.groups!.id!),
+				level: parseInt(findElement(".level", row).textContent.trim()),
 			};
 		});
 	});

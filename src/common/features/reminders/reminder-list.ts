@@ -5,7 +5,8 @@ export interface Reminder {
 	name: string;
 	group?: string;
 	url?: string;
-	enabled?: () => boolean;
+	enabled: () => boolean;
+	ignored?: () => boolean;
 	finished: () => boolean;
 }
 
@@ -76,7 +77,7 @@ export const REMINDERS: Reminder[] = [
 		group: "oc",
 		url: LINKS.organizedCrimes,
 		enabled: () => !!userdata.faction && settings.scripts.reminders.types.oc,
-		finished: () => userdata.organizedCrime && "id" in userdata.organizedCrime,
+		finished: () => userdata.organizedCrime !== null && "id" in userdata.organizedCrime,
 	},
 	{
 		name: "OC: Item",
@@ -98,6 +99,9 @@ export const REMINDERS: Reminder[] = [
 		name: "Race",
 		url: LINKS.raceway,
 		enabled: () => settings.apiUsage.user.icons && settings.scripts.reminders.types.race,
+		ignored: () =>
+			settings.apiUsage.user.travel &&
+			(userdata.travel.arrival_at === null || userdata.travel.destination !== "Torn" || userdata.travel.arrival_at * 1000 > Date.now()),
 		finished: () => userdata.icons.find((icon) => icon.title === "Racing")?.id === 17,
 	},
 	{

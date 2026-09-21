@@ -1,7 +1,7 @@
 import "./blackjack-strategy.css";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { SUGGESTIONS } from "@features/blackjack-strategy/blackjack-suggestions.ts";
 import { Feature } from "@features/feature";
@@ -16,7 +16,7 @@ const ACTIONS: Record<string, string> = {
 
 function initialiseStrategy() {
 	addXHRListener(({ detail: { page, xhr, ...detail } }) => {
-		if (!FEATURE_MANAGER.isEnabled(BlackjackStrategyFeature) || !("json" in detail)) return;
+		if (!("json" in detail)) return;
 		const { json } = detail;
 
 		if (page === "page") {
@@ -81,15 +81,15 @@ function executeStrategy(data: any) {
 
 	const suggestion = getSuggestion(playerValue);
 
-	const element = document.querySelector(".tt-blackjack-suggestion");
+	const element = findElement(".tt-blackjack-suggestion", true);
 	if (element) element.textContent = suggestion;
 	else {
-		document.querySelector(".player-cards").appendChild(elementBuilder({ type: "span", class: "tt-blackjack-suggestion", text: suggestion }));
+		findElement(".player-cards").appendChild(elementBuilder({ type: "span", class: "tt-blackjack-suggestion", text: suggestion }));
 	}
 
 	function getWorth(card: string | number) {
 		let symbol: string | number;
-		if (typeof card === "string") symbol = card.split("-").at(-1);
+		if (typeof card === "string") symbol = card.split("-").at(-1)!;
 		else symbol = card;
 
 		return Number.isNaN(parseInt(symbol.toString())) ? (symbol === "A" ? "A" : 10) : parseInt(symbol.toString());
@@ -145,7 +145,7 @@ function executeStrategy(data: any) {
 }
 
 function removeSuggestion() {
-	const suggestion = document.querySelector(".tt-blackjack-suggestion");
+	const suggestion = findElement(".tt-blackjack-suggestion", true);
 	if (suggestion) suggestion.remove();
 }
 

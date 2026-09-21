@@ -1,6 +1,7 @@
 import { ITEM_RESOLVER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
+import { findAllElements } from "@common/utils/functions/find-elements";
 import { formatNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
@@ -30,7 +31,7 @@ async function showRWValue() {
 
 				return quantity * item.value.market_price;
 			})
-			.filter((x) => !!x);
+			.filter((x) => x !== null);
 
 		const value = items.reduce((total, value) => total + value, 0);
 

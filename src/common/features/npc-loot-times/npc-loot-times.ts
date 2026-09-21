@@ -2,7 +2,8 @@ import "./npc-loot-times.css";
 import { ttStorage } from "@common/utils/context";
 import { npcs, settings } from "@common/utils/data/database";
 import { createContainer } from "@common/utils/functions/containers";
-import { checkDevice, elementBuilder, findElementWithText, findParent, isElement } from "@common/utils/functions/dom";
+import { checkDevice, elementBuilder, findParent, isElement } from "@common/utils/functions/dom";
+import { findElement, findElementWithText } from "@common/utils/functions/find-elements";
 import { dropDecimals, formatTime } from "@common/utils/functions/formatting";
 import type { FormatTimeOptions } from "@common/utils/functions/formatting";
 import { requireSidebar } from "@common/utils/functions/requires";
@@ -19,8 +20,7 @@ async function showNPCs() {
 		id: "npc-loot-times",
 		applyRounding: false,
 		previousElement:
-			findParent(findElementWithText("h2", "Information"), { partialClass: "sidebar-block_" }) ??
-			document.querySelector("[class*='accountLinksWrap___']"),
+			findParent(findElementWithText("h2", "Information", true), { partialClass: "sidebar-block_" }) ?? findElement("[class*='accountLinksWrap___']"),
 	});
 
 	if ("error" in npcs) {
@@ -90,9 +90,10 @@ async function showNPCs() {
 	}
 
 	let hasNotScheduled = false;
-	for (const [id, npc] of Object.entries(npcs.targets).sort(([, a], [, b]) => a.order - b.order)) {
-		const status = npc.current === 0 ? "Hospital" : `Level ${npc.current}`;
-		const next = npc.current !== 5 ? npc.current + 1 : null;
+	for (const [id, npc] of Object.entries(npcs.targets).sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0))) {
+		const current = npc.current ?? 0;
+		const status = current === 0 ? "Hospital" : `Level ${current}`;
+		const next = current !== 5 ? current + 1 : null;
 
 		let timer: HTMLElement;
 		if (next) {

@@ -1,9 +1,8 @@
 import "./dom.css";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements.ts";
 import { requireCondition, requireDOMInteractive, requireElement } from "@common/utils/functions/requires";
-import { getUUID } from "@common/utils/functions/utilities";
 import { PHFillCaretDown, PHFillCaretUp } from "@common/utils/icons/phosphor-icons";
 
-export const rotatingElements: Record<string, { interval: number; totalDegrees: number }> = {};
 export let mobile: boolean, tablet: boolean, hasSidebar: boolean, tabletHorizontal: boolean, tabletVertical: boolean;
 
 interface ElementBuilderOptions {
@@ -77,7 +76,12 @@ export function elementBuilder<K extends keyof HTMLElementTagNameMap>(options: K
 			.filter((entry): entry is [string, EventListener] => !!entry)
 			.forEach(([event, handler]) => newElement.addEventListener(event, handler));
 
-		Object.entries(options.style || {}).forEach(([key, value]) => newElement.style.setProperty(key, value));
+		Object.entries(options.style || {}).forEach(([key, value]) =>
+			newElement.style.setProperty(
+				key.replaceAll(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`),
+				value,
+			),
+		);
 		Object.entries(options.dataset || {}).forEach(([key, value]) => {
 			if (typeof value === "object") newElement.dataset[key] = JSON.stringify(value);
 			else newElement.dataset[key] = value.toString();
@@ -87,23 +91,6 @@ export function elementBuilder<K extends keyof HTMLElementTagNameMap>(options: K
 	} else {
 		throw new Error("Invalid options provided to newElement.");
 	}
-}
-
-export function findElementWithText<K extends keyof HTMLElementTagNameMap>(tag: K, text: string): HTMLElementTagNameMap[K] | null;
-export function findElementWithText(tag: string, text: string): HTMLElement | null;
-
-export function findElementWithText<T = Node>(tag: string, text: string): T | null {
-	const node = document.evaluate(`//${tag}[contains(text(), '${text}')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-	if (!node) return null;
-
-	return node as T;
-}
-
-export function findAllElements<K extends keyof HTMLElementTagNameMap>(tagName: K, parent?: ParentNode): HTMLElementTagNameMap[K][];
-export function findAllElements<T extends Element = HTMLElement>(selector: string, parent?: ParentNode): T[];
-
-export function findAllElements(selector: string, parent: ParentNode = document): Element[] {
-	return Array.from(parent.querySelectorAll(selector));
 }
 
 interface DeviceInformation {
@@ -158,7 +145,9 @@ interface FindParentOptions {
 	currentAttempt: number;
 }
 
-export function findParent(element: Node, partialOptions: Partial<FindParentOptions> = {}) {
+export function findParent(element: Node | undefined | null, partialOptions: Partial<FindParentOptions> = {}) {
+	if (!element) return null;
+
 	const options: FindParentOptions = {
 		tag: undefined,
 		class: undefined,
@@ -171,7 +160,7 @@ export function findParent(element: Node, partialOptions: Partial<FindParentOpti
 	};
 
 	if (!element?.parentElement) return undefined;
-	if (options.maxAttempts !== -1 && options.currentAttempt > options.maxAttempts) return undefined;
+	if (options.maxAttempts !== -1 && options.currentAttempt > options.maxAttempts) return null;
 
 	if (options.tag && element.parentElement.tagName === options.tag) return element.parentElement;
 	if (options.id && element.parentElement.id === options.id) return element.parentElement;
@@ -188,46 +177,11 @@ export function findParent(element: Node, partialOptions: Partial<FindParentOpti
 	return findParent(element.parentElement, { ...options, currentAttempt: (options.currentAttempt ?? 0) + 1 });
 }
 
-export function rotateElement(element: HTMLElement | SVGElement, degrees: number) {
-	let uuid: string;
-	if (element.hasAttribute("rotate-id")) uuid = element.getAttribute("rotate-id")!;
-	else {
-		uuid = getUUID();
-		element.setAttribute("rotate-id", uuid);
-	}
-
-	if (rotatingElements[uuid]) {
-		clearInterval(rotatingElements[uuid].interval);
-		element.style.transform = `rotate(${rotatingElements[uuid].totalDegrees}deg)`;
-	}
-
-	const startDegrees = (element.style.transform ? parseInt(element.style.transform.replace("rotate(", "").replace("deg)", "")) : 0) % 360;
-	element.style.transform = `rotate(${startDegrees}deg)`;
-
-	const totalDegrees = startDegrees + degrees;
-	const step = 1000 / degrees;
-
-	rotatingElements[uuid] = {
-		interval: setInterval(() => {
-			const currentRotation = element.style.transform ? parseInt(element.style.transform.replace("rotate(", "").replace("deg)", "")) : 0;
-			let newRotation = currentRotation + step;
-
-			if (currentRotation < totalDegrees && newRotation > totalDegrees) {
-				newRotation = totalDegrees;
-				clearInterval(rotatingElements[uuid].interval);
-			}
-
-			element.style.transform = `rotate(${newRotation}deg)`;
-		}, 1),
-		totalDegrees,
-	};
-}
-
 type TableSortOrder = "asc" | "desc" | "none";
 
 export function sortTable(table: HTMLElement, columnPlace: number, order?: TableSortOrder) {
-	const header = table.querySelector(`th:nth-child(${columnPlace}), .row.header > :nth-child(${columnPlace})`)!;
-	let icon = header.querySelector<SVGElement>("svg");
+	const header = findElement(`th:nth-child(${columnPlace}), .row.header > :nth-child(${columnPlace})`, table);
+	let icon = findElement<SVGElement>("svg", header, true);
 	if (order) {
 		if (icon) {
 			switch (order) {
@@ -277,11 +231,11 @@ export function sortTable(table: HTMLElement, columnPlace: number, order?: Table
 	for (const h of findAllElements("th, .row.header > *", table)) {
 		if (h === header) continue;
 
-		h.querySelector("i")?.remove();
+		findElement("i", h, true)?.remove();
 	}
 
 	let rows: HTMLElement[];
-	if (!table.querySelector("tr:not(.heading), .row:not(.header)")) rows = [];
+	if (!findElement("tr:not(.heading), .row:not(.header)", table, true)) rows = [];
 	else {
 		rows = findAllElements("tr:not(.header), .row:not(.header)", table);
 		rows = sortRows(rows);
@@ -307,15 +261,15 @@ export function sortTable(table: HTMLElement, columnPlace: number, order?: Table
 		return rows;
 
 		function sortHelper(elementA: HTMLElement, elementB: HTMLElement) {
-			elementA = elementA.querySelector(`:scope > *:nth-child(${columnPlace})`)!;
-			elementB = elementB.querySelector(`:scope > *:nth-child(${columnPlace})`)!;
+			elementA = findElement(`:scope > *:nth-child(${columnPlace})`, elementA);
+			elementB = findElement(`:scope > *:nth-child(${columnPlace})`, elementB);
 
 			let valueA: string, valueB: string;
-			if (elementA.hasAttribute("sort-type")) {
-				switch (elementA.getAttribute("sort-type")) {
+			if (elementA.dataset.sortType) {
+				switch (elementA.dataset.sortType) {
 					case "date":
-						valueA = elementA.getAttribute("value")!;
-						valueB = elementB.getAttribute("value")!;
+						valueA = elementA.dataset.value!;
+						valueB = elementB.dataset.value!;
 
 						if (Date.parse(valueA)) valueA = Date.parse(valueA).toString();
 						if (Date.parse(valueB)) valueB = Date.parse(valueB).toString();
@@ -335,12 +289,12 @@ export function sortTable(table: HTMLElement, columnPlace: number, order?: Table
 							]!;
 						break;
 					default:
-						console.warn("Attempting to sort by a non-existing type.", elementA.getAttribute("sort-type"));
+						console.warn("Attempting to sort by a non-existing type.", elementA.dataset.sortType);
 						return { a: 0, b: 0 }; // Keep original sorting order this way.
 				}
-			} else if (elementA.hasAttribute("value")) {
-				valueA = elementA.getAttribute("value")!;
-				valueB = elementB.getAttribute("value")!;
+			} else if (elementA.dataset.value !== undefined) {
+				valueA = elementA.dataset.value;
+				valueB = elementB.dataset.value!;
 			} else {
 				valueA = elementA.textContent;
 				valueB = elementB.textContent;
@@ -375,7 +329,7 @@ export function resortTable(table: HTMLElement) {
 }
 
 export function showLoadingPlaceholder(element: HTMLElement, show: boolean) {
-	const placeholder = element.querySelector(".tt-loading-placeholder");
+	const placeholder = findElement(".tt-loading-placeholder", element, true);
 
 	if (show) {
 		if (placeholder) {
@@ -403,7 +357,7 @@ export function executeScript(filename: string, remove = true, unique = false) {
 	});
 
 	requireCondition(() => !!document.head).then(() => {
-		if (unique && document.head.querySelector(`:scope > script[src='${filename}']`)) return;
+		if (unique && findElement(`:scope > script[src='${filename}']`, document.head, true)) return;
 
 		document.head.appendChild(script);
 
@@ -411,19 +365,8 @@ export function executeScript(filename: string, remove = true, unique = false) {
 	});
 }
 
-export function updateQuery(key: string, value: string) {
-	if (history.pushState) {
-		const url = new URL(location.href);
-		const params = url.searchParams;
-
-		params.set(key, value);
-
-		history.pushState({ path: url.toString() }, "", url.toString());
-	}
-}
-
 export async function addInformationSection() {
-	if (document.querySelector(".tt-sidebar-information")) return;
+	if (findElement(".tt-sidebar-information", true)) return;
 
 	const parent = await requireElement(
 		"#sidebarroot div[class*='user-information_'] div[class*='toggle-content_'] div[class*='content_'], #sidebarroot div[class*='userInformation___']",
@@ -439,11 +382,11 @@ export async function addInformationSection() {
 }
 
 export function showInformationSection() {
-	document.querySelector(".tt-sidebar-information-divider")?.classList.remove("tt-hidden");
-	document.querySelector(".tt-sidebar-information")?.classList.remove("tt-hidden");
+	findElement(".tt-sidebar-information-divider", true)?.classList.remove("tt-hidden");
+	findElement(".tt-sidebar-information", true)?.classList.remove("tt-hidden");
 }
 
-export function isElement(node: Node | EventTarget | null): node is Element {
+export function isElement(node: Node | EventTarget | null | undefined): node is Element {
 	return !!node && node instanceof Element;
 }
 
@@ -455,7 +398,7 @@ export function isHTMLElement(node: Node | EventTarget | null): node is HTMLElem
 	return !!node && node instanceof HTMLElement;
 }
 
-export function isElementOfTag<K extends keyof HTMLElementTagNameMap>(node: Node | EventTarget, tag: K): node is HTMLElementTagNameMap[K] {
+export function isElementOfTag<K extends keyof HTMLElementTagNameMap>(node: Node | EventTarget | null, tag: K): node is HTMLElementTagNameMap[K] {
 	return isHTMLElement(node) && node.tagName.toLowerCase() === tag;
 }
 

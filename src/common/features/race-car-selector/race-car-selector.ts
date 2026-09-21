@@ -1,10 +1,10 @@
 import { TRACKS } from "@common/pages/racing-page.ts";
 import type { TrackData } from "@common/pages/racing-page.ts";
-import { FEATURE_MANAGER } from "@common/utils/context.ts";
 import { settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api.ts";
 import { elementBuilder } from "@common/utils/functions/dom.ts";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events.ts";
+import { findElement } from "@common/utils/functions/find-elements";
 import { getPageStatus, getRFC } from "@common/utils/functions/torn";
 import { PHFillCaretDown, PHFillCaretRight } from "@common/utils/icons/phosphor-icons.ts";
 import { Feature } from "@features/feature";
@@ -14,49 +14,41 @@ const CUSTOM_RACES: Record<number, string> = {};
 
 function initialiseListeners() {
 	addCustomListener(EVENT_CHANNELS.RACING__CUSTOM_RACES__LIST, () => {
-		const list = document.querySelector(".events-list");
+		const list = findElement(".events-list", true);
 		if (!list) return;
 
 		new MutationObserver(() => {
-			const activeRow = list.querySelector(".active-row");
+			const activeRow = findElement(".active-row", list, true);
 			if (!activeRow) return;
 
-			const trackElement = activeRow.querySelector(".track");
-			const track = trackElement.childNodes[0].textContent.trim();
+			const trackElement = findElement(".track", activeRow);
+			const track = trackElement.childNodes[0].textContent!.trim();
 
-			const joinLinkElement = activeRow.querySelector<HTMLAnchorElement>("a[step-value='chooseRacingCar']");
+			const joinLinkElement = findElement<HTMLAnchorElement>("a[step-value='chooseRacingCar']", activeRow, true);
 			if (joinLinkElement) {
 				const joinParams = new URL(joinLinkElement.href).searchParams;
-				const id = parseInt(joinParams.get("id"));
+				const id = parseInt(joinParams.get("id")!);
 
 				CUSTOM_RACES[id] = track;
 			}
 
-			const passwordForm = activeRow.querySelector(".join-password-form");
+			const passwordForm = findElement(".join-password-form", activeRow, true);
 			if (passwordForm) {
-				const idInput = passwordForm.querySelector("input[name='id']");
-				const id = parseInt(idInput.getAttribute("value"));
+				const idInput = findElement("input[name='id']", passwordForm);
+				const id = parseInt(idInput.getAttribute("value")!);
 
 				CUSTOM_RACES[id] = track;
 			}
 		}).observe(list, { subtree: true, attributes: true, attributeFilter: ["class"] });
 	});
 	addCustomListener(EVENT_CHANNELS.RACING__SELECT_CAR_CUSTOM, async ({ id }) => {
-		if (!FEATURE_MANAGER.isEnabled(RaceCarSelectorFeature)) return;
-
 		const trackName = CUSTOM_RACES[id];
 
 		await selectCar(TRACKS.find(({ name }) => name.toLowerCase() === trackName?.toLowerCase()));
 	});
-	addCustomListener(EVENT_CHANNELS.RACING__SELECT_CAR_CUSTOM_CREATED, async ({ trackId }) => {
-		if (!FEATURE_MANAGER.isEnabled(RaceCarSelectorFeature)) return;
-
-		await selectCar(TRACKS.find(({ id }) => id === trackId));
-	});
+	addCustomListener(EVENT_CHANNELS.RACING__SELECT_CAR_CUSTOM_CREATED, ({ trackId }) => selectCar(TRACKS.find(({ id }) => id === trackId)));
 	addCustomListener(EVENT_CHANNELS.RACING__CHANGE_CAR, async () => {
-		if (!FEATURE_MANAGER.isEnabled(RaceCarSelectorFeature)) return;
-
-		const trackElement = document.querySelector(".enlisted-btn-wrap");
+		const trackElement = findElement(".enlisted-btn-wrap", true);
 		const trackName = trackElement?.textContent.split("-")?.[0].trim();
 
 		await selectCar(TRACKS.find(({ name }) => name.toLowerCase() === trackName?.toLowerCase()));
@@ -64,7 +56,7 @@ function initialiseListeners() {
 }
 
 async function selectCar(track: TrackData | undefined) {
-	document.querySelector(`.${styles.preferredCar}`)?.remove();
+	findElement(`.${styles.preferredCar}`, true)?.remove();
 
 	if (!track) return;
 
@@ -75,12 +67,12 @@ async function selectCar(track: TrackData | undefined) {
 	if (!car) return;
 
 	let url: string;
-	const joinAction = document.querySelector<HTMLAnchorElement>(".btn-action-joinRace");
+	const joinAction = findElement<HTMLAnchorElement>(".btn-action-joinRace", true);
 	if (joinAction)
 		url = `/page.php?sid=racing&tab=customrace&section=getInRace&step=getInRace&id=${new URL(joinAction.href).searchParams.get("id")}&carID=${car.id}&rfcv=${getRFC()}`;
 	else url = `/page.php?sid=racing&tab=cars&section=changeRacingCar&step=changeRacingCar&id=${car.id}`;
 
-	document.querySelector(".enlist-wrap").insertAdjacentElement(
+	findElement(".enlist-wrap").insertAdjacentElement(
 		"afterbegin",
 		elementBuilder({
 			type: "a",
@@ -93,10 +85,10 @@ async function selectCar(track: TrackData | undefined) {
 }
 
 function hideEnlistedCars() {
-	const wrapper = document.querySelector(".enlist-wrap");
+	const wrapper = findElement(".enlist-wrap", true);
 	if (!wrapper) return;
 
-	const title = wrapper.querySelector<HTMLElement>(".title-black:has(+ .enlist:last-child)");
+	const title = findElement(".title-black:has(+ .enlist:last-child)", wrapper);
 	let icon = PHFillCaretRight();
 
 	title.addEventListener("click", () => {

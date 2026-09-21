@@ -1,28 +1,25 @@
 import "./hide-chat.css";
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { createCheckbox } from "@common/utils/elements/checkbox/checkbox";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireChatsLoaded } from "@common/utils/functions/requires";
 import { ExecutionTiming, Feature } from "@features/feature";
 
 function initializeListeners() {
-	addCustomListener(EVENT_CHANNELS.CHAT_SETTINGS_MENU_OPENED, async ({ settingsPanel }) => {
-		if (!FEATURE_MANAGER.isEnabled(HideChatFeature)) return;
-
-		await showButton(settingsPanel);
-	});
+	addCustomListener(EVENT_CHANNELS.CHAT_SETTINGS_MENU_OPENED, ({ settingsPanel }) => showButton(settingsPanel));
 }
 
 function hideChats() {
 	if (settings.pages.chat.hideChat) document.documentElement.classList.add("tt-chat-hidden");
 }
 
-async function showButton(settingsPanel: HTMLElement = null) {
+async function showButton(settingsPanel: HTMLElement | null = null) {
 	if (!settingsPanel) {
 		await requireChatsLoaded();
 
-		settingsPanel = document.querySelector("#chatRoot [class*='settings-panel__'], #settings_panel");
+		settingsPanel = findElement("#chatRoot [class*='settings-panel__'], #settings_panel", true);
 	}
 
 	if (!settingsPanel) return;
@@ -41,7 +38,7 @@ async function showButton(settingsPanel: HTMLElement = null) {
 	if (!settingsPanel.id) {
 		settingsPanel.children[1].insertAdjacentElement("afterbegin", checkbox.element);
 	} else {
-		settingsPanel.querySelector("[class*='content___']").insertAdjacentElement("afterbegin", checkbox.element);
+		findElement("[class*='content___']", settingsPanel).insertAdjacentElement("afterbegin", checkbox.element);
 	}
 }
 

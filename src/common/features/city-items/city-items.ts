@@ -1,15 +1,16 @@
 import "./city-items.css";
 import { isMapData } from "@common/pages/city-page";
 import type { DecodedCityItem, InternalCityItem } from "@common/pages/city-page";
-import { EVENT_HANDLER, FEATURE_MANAGER, ITEM_RESOLVER, RUNTIME_INFORMATION, SCRIPT_INJECTOR, ttStorage } from "@common/utils/context";
+import { EVENT_HANDLER, ITEM_RESOLVER, RUNTIME_INFORMATION, SCRIPT_INJECTOR, ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { createCheckbox } from "@common/utils/elements/checkbox/checkbox";
 import { createSelect } from "@common/utils/elements/select/select";
 import { displayAlert } from "@common/utils/functions/alerts";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import { createContainer, findContainer } from "@common/utils/functions/containers";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatDate, formatNumber } from "@common/utils/functions/formatting";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
@@ -44,8 +45,6 @@ function initialise() {
 	SCRIPT_INJECTOR.injectCityItemsMap();
 
 	addXHRListener(({ detail: { page, xhr, json } }) => {
-		if (!FEATURE_MANAGER.isEnabled(CityItemsFeature)) return;
-
 		if (isMapData(page, xhr, json)) {
 			const items = resolveUserItems(decodeTerritoryUserItems(json.territoryUserItems));
 
@@ -59,7 +58,7 @@ function initialise() {
 
 	document.addEventListener("click", handleMapOverlayClick, true);
 	EVENT_HANDLER.registerListenerCrossWorld(window, EVENT_CHANNELS.CITY_ITEMS_MAP__MODEL_ITEMS, ({ items: userItems }) => {
-		if (!FEATURE_MANAGER.isEnabled(CityItemsFeature) || findContainer("City Items")) return;
+		if (findContainer("City Items")) return;
 
 		if (!Array.isArray(userItems)) return;
 
@@ -70,7 +69,7 @@ function initialise() {
 }
 
 function triggerFallback() {
-	if (document.querySelector("li[aria-controls='quick-links'][aria-selected='true']") || findContainer("City Items")) return;
+	if (findElement("li[aria-controls='quick-links'][aria-selected='true']", true) || findContainer("City Items")) return;
 
 	const userItems = getPageModelItems();
 	if (userItems) {
@@ -287,7 +286,7 @@ async function showCityItemsContainer(items: CityItem[]) {
 	await requireElement("#map .leaflet-zoom-animated");
 
 	if (!contentElement || !document.contains(contentElement)) {
-		const { content, options } = createContainer("City Items", { class: "mt10", alwaysContent: true, nextElement: document.querySelector("#tab-menu") });
+		const { content, options } = createContainer("City Items", { class: "mt10", alwaysContent: true, nextElement: findElement("#tab-menu") });
 		contentElement = content;
 		showHighlightControl(options);
 	}
@@ -310,7 +309,7 @@ function showHighlightControl(options: HTMLElement) {
 }
 
 function setMapHighlight(state: boolean) {
-	document.querySelector("#map")?.classList.toggle("highlight-items", state);
+	findElement("#map", true)?.classList.toggle("highlight-items", state);
 }
 
 function setCityItems(items: CityItem[]) {
@@ -323,7 +322,7 @@ function setCityItems(items: CityItem[]) {
 function populateContainer(content: HTMLElement, items: CityItem[]) {
 	showControls(content, items);
 	if (ITEM_RESOLVER.hasFullItems()) showValue(content, items);
-	else content.querySelector(".tt-city-total")?.remove();
+	else findElement(".tt-city-total", content, true)?.remove();
 	showItemList(content, items);
 }
 
@@ -368,7 +367,7 @@ function calculateItemValue(items: CityItem[]): { value: number; count: number }
 }
 
 function showValue(content: HTMLElement, items: CityItem[]) {
-	content.querySelector(".tt-city-total")?.remove();
+	findElement(".tt-city-total", content, true)?.remove();
 
 	if (!ITEM_RESOLVER.hasFullItems()) return;
 
@@ -398,7 +397,7 @@ function resetVisibleGroups() {
 }
 
 function showControls(content: HTMLElement, items: CityItem[]) {
-	content.querySelector(".tt-city-controls")?.remove();
+	findElement(".tt-city-controls", content, true)?.remove();
 
 	const groupByCheckbox = createCheckbox();
 	const groupBySelect = createSelect(GROUP_PERIODS.map((period) => ({ value: period.key, description: period.label })));
@@ -507,7 +506,7 @@ function getGroupedItems(items: CityItem[]): { label: string; items: CityItem[] 
 }
 
 function showItemList(content: HTMLElement, items: CityItem[]) {
-	content.querySelector(".tt-city-items")?.remove();
+	findElement(".tt-city-items", content, true)?.remove();
 
 	const listElement = elementBuilder({ type: "div", class: "tt-city-items hide-collapse" });
 	const filtered = getFilteredItems(items);

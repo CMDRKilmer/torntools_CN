@@ -1,8 +1,9 @@
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
 import { checkboxSection, createFilter, defaultFactionsItems, presetSection, sliderSection } from "@common/utils/functions/filters";
 import type { FilterController, SliderRange } from "@common/utils/functions/filters";
+import { findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { extractFactionsFromPage, getPageStatus } from "@common/utils/functions/torn";
@@ -11,11 +12,7 @@ import { Feature } from "@features/feature";
 let filter: FilterController;
 
 function initialiseListeners() {
-	addCustomListener(EVENT_CHANNELS.HOSPITAL_SWITCH_PAGE, async () => {
-		if (!FEATURE_MANAGER.isEnabled(HospitalFilterFeature)) return;
-
-		await filter.run();
-	});
+	addCustomListener(EVENT_CHANNELS.HOSPITAL_SWITCH_PAGE, () => filter.run());
 }
 
 type HospitalFilterState = {
@@ -33,7 +30,7 @@ async function addFilterContainer() {
 	const sections = [
 		presetSection({
 			preset: "activity",
-			defaults: filters.abroadPeople.activity,
+			defaults: filters.hospital.activity,
 		}),
 
 		checkboxSection({
@@ -44,7 +41,7 @@ async function addFilterContainer() {
 			test: (row, revivesOn) => {
 				if (!revivesOn) return true;
 
-				return !row.querySelector(".revive")?.classList?.contains("reviveNotAvailable");
+				return !findElement(".revive", row, true)?.classList?.contains("reviveNotAvailable");
 			},
 		}),
 
@@ -61,7 +58,7 @@ async function addFilterContainer() {
 			defaults: { low: filters.hospital.timeStart, high: filters.hospital.timeEnd },
 			formatCounter: ({ start, end }) => `Time ${start}h - ${end}h`,
 			test: (row, range) => {
-				const hoursLeft = parseInt(row.querySelector(".info-wrap .time").lastChild.textContent?.match(/(\d*)h/)?.[1]) || 0;
+				const hoursLeft = parseInt(findElement(".info-wrap .time", row, true)?.lastChild?.textContent?.match(/(\d*)h/)?.[1] ?? "") || 0;
 
 				if (range.start && hoursLeft < range.start) return false;
 				if (range.end !== 100 && hoursLeft > range.end) return false;
@@ -77,7 +74,7 @@ async function addFilterContainer() {
 			defaults: { low: filters.hospital.levelStart, high: filters.hospital.levelEnd },
 			formatCounter: ({ start, end }) => `Level ${start} - ${end}`,
 			test: (row, range) => {
-				const level = convertToNumber(row.querySelector(".info-wrap .level").textContent);
+				const level = convertToNumber(findElement(".info-wrap .level", row).textContent);
 
 				if (range.start && level < range.start) return false;
 				if (range.end !== 100 && level > range.end) return false;
@@ -92,7 +89,7 @@ async function addFilterContainer() {
 		container: {
 			title: "Hospital Filter",
 			class: "mt10",
-			nextElement: document.querySelector(".users-list-title"),
+			nextElement: findElement(".users-list-title"),
 			compact: true,
 		},
 		statisticsLabel: "players",

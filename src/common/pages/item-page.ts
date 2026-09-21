@@ -1,6 +1,7 @@
 import { ITEM_RESOLVER } from "@common/utils/context";
-import { elementBuilder, findAllElements } from "@common/utils/functions/dom";
+import { elementBuilder } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { requireItemsLoaded } from "@common/utils/functions/requires";
 import { isInfiniteUsageItem } from "@common/utils/functions/torn";
@@ -17,7 +18,7 @@ export function setupItemPage() {
 		if (page !== "item") return;
 
 		const params = new URLSearchParams(xhr.requestBody);
-		const step = params.get("step");
+		const step = params.get("step") ?? "";
 
 		if ("json" in detail) {
 			const { json } = detail;
@@ -46,11 +47,11 @@ export function setupItemPage() {
 						}
 					}
 				} else {
-					const itemId = parseInt(params.get("itemID"));
+					const itemId = parseInt(params.get("itemID")!);
 
 					if (!isInfiniteUsageItem(itemId)) {
 						triggerCustomListener(EVENT_CHANNELS.ITEM_AMOUNT, {
-							item: parseInt(params.get("itemID")),
+							item: itemId,
 							amount: -1,
 							reason: "usage",
 							loaned: params.has("loaned", "1"),
@@ -60,8 +61,8 @@ export function setupItemPage() {
 			} else if (isSendItemAction(step, json)) {
 				if (!json.success) return;
 
-				const actionId = "confirm" in json ? json.itemID : params.get("XID");
-				const item = "confirm" in json ? params.get("itemID") : pendingActions[actionId].item;
+				const actionId = "confirm" in json ? json.itemID : params.get("XID")!;
+				const item = "confirm" in json ? params.get("itemID")! : pendingActions[actionId].item;
 				const amount = json.amount;
 
 				if ("confirm" in json) pendingActions[actionId] = { item };
@@ -75,7 +76,7 @@ export function setupItemPage() {
 				if (!tab) return;
 
 				new MutationObserver((_mutations, observer) => {
-					if (document.querySelector("li.ajax-item-loader")) return;
+					if (findElement("li.ajax-item-loader", true)) return;
 
 					triggerCustomListener(EVENT_CHANNELS.ITEM_ITEMS_LOADED, { tab, initial: false });
 
@@ -87,7 +88,7 @@ export function setupItemPage() {
 
 			if (action === "equip") {
 				const responseElement = elementBuilder({ type: "div", html: xhr.response });
-				const textElement = responseElement.querySelector("h5, [data-status]");
+				const textElement = findElement("h5, [data-status]", responseElement, true);
 
 				if (textElement) {
 					const text = textElement.textContent.trim();
@@ -112,16 +113,19 @@ export function setupItemPage() {
 			icon.addEventListener("click", async () => {
 				await requireItemsLoaded();
 
-				triggerCustomListener(EVENT_CHANNELS.ITEM_SWITCH_TAB, { tab: icon.dataset.type });
+				triggerCustomListener(EVENT_CHANNELS.ITEM_SWITCH_TAB, { tab: icon.dataset.type! });
 			});
 		}
 
-		triggerCustomListener(EVENT_CHANNELS.ITEM_ITEMS_LOADED, { tab: getCurrentTab(), initial: false });
+		const tab = getCurrentTab();
+		if (tab) {
+			triggerCustomListener(EVENT_CHANNELS.ITEM_ITEMS_LOADED, { tab, initial: false });
+		}
 	});
 }
 
 function getCurrentTab() {
-	return document.querySelector<HTMLElement>("ul.items-cont.tab-menu-cont[style='display: block;'], ul.items-cont.tab-menu-cont:not([style])");
+	return findElement("ul.items-cont.tab-menu-cont[style='display: block;'], ul.items-cont.tab-menu-cont:not([style])", true);
 }
 
 export type TornInternalUseItemSuccess = {

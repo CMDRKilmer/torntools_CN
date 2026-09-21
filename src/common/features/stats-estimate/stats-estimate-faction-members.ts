@@ -1,9 +1,8 @@
 import { getFactionSubpage, isDestroyed, isInternalFaction } from "@common/pages/factions-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
-import { findAllElements } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus, getUsername } from "@common/utils/functions/torn";
 import { Feature } from "@features/feature";
@@ -14,26 +13,22 @@ const statsEstimate = new StatsEstimate("Faction Members", true);
 function registerListeners() {
 	if (isInternalFaction) {
 		addCustomListener(EVENT_CHANNELS.FACTION_INFO, async () => {
-			if (!FEATURE_MANAGER.isEnabled(StatsEstimateFactionMembersFeature) || settings.pages.faction.memberFilter) return;
+			if (settings.pages.faction.memberFilter) return;
 
 			await showEstimates();
 		});
 	}
 
 	addCustomListener(EVENT_CHANNELS.FILTER_APPLIED, async ({ filter }) => {
-		if (!FEATURE_MANAGER.isEnabled(StatsEstimateFactionMembersFeature) || filter !== "Faction Member Filter") return;
+		if (filter !== "Faction Member Filter") return;
 
 		await showEstimates();
 	});
 	addCustomListener(EVENT_CHANNELS.FACTION_NATIVE_FILTER, async () => {
-		if (!FEATURE_MANAGER.isEnabled(StatsEstimateFactionMembersFeature)) return;
-
 		removeEstimates();
 		await showEstimates();
 	});
 	addCustomListener(EVENT_CHANNELS.FACTION_NATIVE_SORT, async () => {
-		if (!FEATURE_MANAGER.isEnabled(StatsEstimateFactionMembersFeature)) return;
-
 		removeEstimates();
 		await showEstimates();
 	});
@@ -55,11 +50,11 @@ async function showEstimates() {
 		".faction-info-wrap .table-body > .table-row",
 		(row) => {
 			// Don't show this for fallen players.
-			if (row.querySelector(".icons li[id*='icon77___']")) return null;
+			if (findElement(".icons li[id*='icon77___']", row, true)) return null;
 
 			return {
 				id: getUsername(row).id,
-				level: parseInt(row.querySelector(".lvl").textContent.trim()),
+				level: parseInt(findElement(".lvl", row).textContent.trim()),
 			};
 		},
 		{

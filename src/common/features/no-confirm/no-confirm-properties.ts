@@ -1,35 +1,34 @@
 import type { TornInternalSellProperty } from "@common/pages/properties-page";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { displayAlert } from "@common/utils/functions/alerts";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import { getHashParameters } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { Feature } from "@features/feature";
 
 function initialise() {
 	addCustomListener(EVENT_CHANNELS.PROPERTIES__ROUTE, async ({ route: { page, paramTab } }) => {
-		if (!FEATURE_MANAGER.isEnabled(NoConfirmPropertiesFeature) || page !== "options" || paramTab !== "sell") return;
+		if (page !== "options" || paramTab !== "sell") return;
 
 		await startFeature();
 	});
 	addCustomListener(EVENT_CHANNELS.PROPERTIES__ROUTE_PAGE, async ({ route: { page, paramTab } }) => {
-		if (!FEATURE_MANAGER.isEnabled(NoConfirmPropertiesFeature) || page !== "options" || paramTab !== "sell") return;
+		if (page !== "options" || paramTab !== "sell") return;
 
 		await startFeature();
 	});
 }
 
 async function startFeature() {
-	const sellButton = document.querySelector<HTMLElement>(".btn:has(input[type='submit'][value='SELL'][data-to='agent'])");
+	const sellButton = findElement(".btn:has(input[type='submit'][value='SELL'][data-to='agent'])", true);
 	if (!sellButton) return;
 
 	sellButton.addEventListener("click", async (event) => {
-		if (!FEATURE_MANAGER.isEnabled(NoConfirmPropertiesFeature)) return;
 		event.preventDefault();
 		event.stopPropagation();
 
-		const propertyId = parseInt(getHashParameters().get("ID"));
+		const propertyId = parseInt(getHashParameters().get("ID")!);
 
 		await sellProperty(propertyId)
 			.then((result) => {

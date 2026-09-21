@@ -1,5 +1,6 @@
 import { getHashParameters } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 
 export type TornInternalSellPropertySuccess = { link: string; success: boolean; text: string };
@@ -29,7 +30,7 @@ export function setupPropertiesPage() {
 
 			const pagination = getPaginationPage(newRoute.page);
 			if (pagination !== null) {
-				if (document.querySelector(".page-number.active")) {
+				if (findElement(".page-number.active", true)) {
 					await requireElement(`.page-number.active[page='${pagination}']`);
 				}
 				await requireElement(".properties-list > li");
@@ -62,13 +63,13 @@ function decidePropertiesRoute(): PropertiesRoute {
 	const step = params.get("p");
 	if (!step || step === "properties") {
 		page = "all-properties";
-		paramStart = params.has("start") ? parseInt(params.get("start")) : null;
+		paramStart = params.has("start") ? parseInt(params.get("start")!) : null;
 	} else if (step === "yourProperties") {
 		page = "your-properties";
-		paramStart = params.has("start") ? parseInt(params.get("start")) : null;
+		paramStart = params.has("start") ? parseInt(params.get("start")!) : null;
 	} else if (step === "spousesProperties") {
 		page = "spouse-properties";
-		paramStart = params.has("start") ? parseInt(params.get("start")) : null;
+		paramStart = params.has("start") ? parseInt(params.get("start")!) : null;
 	} else if (step === "options") {
 		page = "options";
 		paramTab = params.get("tab");
@@ -107,7 +108,7 @@ function getPaginationPage(page: PropertiesPage) {
 	const params = getHashParameters();
 	if (!params.has("start")) return 1;
 
-	const start = parseInt(params.get("start"));
+	const start = parseInt(params.get("start")!);
 
 	return start / 12 + 1;
 }

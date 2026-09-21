@@ -1,13 +1,14 @@
+import { findElement } from "@common/utils/functions/find-elements";
 import { TO_MILLIS } from "@common/utils/functions/utilities";
 
-type RequireConditionFn<T = any> = () => T | { value: T; success: boolean };
+type RequireConditionFn<T = any> = () => T | { value: NonNullable<T>; success: boolean };
 
 interface RequireConditionOptions {
 	delay: number;
 	maxCycles: number;
 }
 
-export function requireCondition<T = any>(condition: RequireConditionFn<T>, partialOptions: Partial<RequireConditionOptions> = {}): Promise<T> {
+export function requireCondition<T = any>(condition: RequireConditionFn<T>, partialOptions: Partial<RequireConditionOptions> = {}): Promise<NonNullable<T>> {
 	const options: RequireConditionOptions = {
 		delay: 50,
 		maxCycles: 100,
@@ -34,7 +35,7 @@ export function requireCondition<T = any>(condition: RequireConditionFn<T>, part
 				else reject();
 			} else if (typeof response === "object") {
 				if ("success" in response) {
-					if (response.success === true) resolve(response.value);
+					if (response.success) resolve(response.value);
 					else reject(response.value);
 				} else {
 					resolve(response);
@@ -66,7 +67,7 @@ type RequireElementOptions = {
 };
 
 function checkListener(listener: PendingListener, entry: ObserverEntry): boolean {
-	const element = listener.parent.querySelector(listener.selector);
+	const element = findElement(listener.selector, listener.parent, true);
 
 	const matched = listener.invert ? !element : !!element;
 	if (!matched) return false;
@@ -113,7 +114,7 @@ export function requireElement<T extends Element = HTMLElement>(selector: string
 	const error = new Error("Maximum cycles reached.");
 
 	return new Promise((resolve, reject) => {
-		const element = options.parent.querySelector<T>(selector);
+		const element = findElement<T>(selector, options.parent, true);
 		if (options.invert && !element) {
 			resolve(true);
 			return;
@@ -197,7 +198,7 @@ export function requireChatsLoaded() {
 
 interface ChainedObserver {
 	observer: MutationObserver;
-	selectorResult: Element;
+	selectorResult: Element | undefined;
 }
 
 /**
@@ -211,7 +212,7 @@ export function observeChain(root: ParentNode, selectorsChain: string[], onReach
 		const selector = selectorsChain[index];
 		const observer = new MutationObserver(() => {
 			const activeObserver = activeObservers[index];
-			const selectorResult = target.querySelector(selector) ?? undefined;
+			const selectorResult = findElement(selector, target, true) ?? undefined;
 
 			if (selectorResult === activeObserver.selectorResult) {
 				return;

@@ -1,14 +1,18 @@
 import { ITEM_RESOLVER, ttStorage } from "@common/utils/context.ts";
 import { settings } from "@common/utils/data/database.ts";
 import { createContainer } from "@common/utils/functions/containers.ts";
-import { elementBuilder, findAllElements, findParent, isElement, isHTMLElement, mobile, tablet } from "@common/utils/functions/dom.ts";
+import { elementBuilder, findParent, isElement, isHTMLElement, mobile, tablet } from "@common/utils/functions/dom.ts";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements.ts";
 import { formatTime } from "@common/utils/functions/formatting.ts";
 import { createSwipeSafeClickEvents } from "@common/utils/functions/gestures.ts";
-import { getEquipPosition, getItemEnergy, getUserEnergy, isEquipable } from "@common/utils/functions/torn.ts";
+import { ALLOWED_BLOOD, getBloodType, getEquipPosition, getItemEnergy, getUserEnergy, isEquipable } from "@common/utils/functions/torn.ts";
 import { PHEye, PHPlus, PHX } from "@common/utils/icons/phosphor-icons.ts";
 import { getSpecialAction, isSpecialAction, toggleSpecialQuickOptions } from "@features/quick-items/shared/special-actions.ts";
+import "@features/highlight-blood-bags/highlight-blood-bags.css";
 import styles from "./quick-items-common.module.css";
 import "./quick-items-common.css";
+
+const IRRADIATED_BLOOD_BAG = 1012;
 
 export type QuickItem = { id: QuickItemId };
 export type QuickItemId = number | string;
@@ -41,7 +45,7 @@ export function buildResponseLinks(links: { title: string; url: string; class: s
 export function formatResponseTimers(responseWrap: HTMLElement) {
 	for (const count of findAllElements(".counter-wrap", responseWrap)) {
 		count.classList.add("tt-modified");
-		count.textContent = formatTime({ seconds: parseInt(count.dataset.time) }, { type: "timer", daysToHours: true });
+		count.textContent = formatTime({ seconds: parseInt(count.dataset.time!) }, { type: "timer", daysToHours: true });
 	}
 }
 
@@ -57,11 +61,11 @@ export function createQuickDragHandlers(options: QuickDragHandlerOptions) {
 
 	return {
 		onDragStart(event: DragEvent) {
-			event.dataTransfer.setData("text/plain", null);
+			event.dataTransfer?.setData("text/plain", "");
 
 			setTimeout(() => {
-				document.querySelector(`${container} > main`).classList.add("drag-progress");
-				if (document.querySelector(`${container} .temp.item`) || !isElement(event.target)) return;
+				findElement(`${container} > main`).classList.add("drag-progress");
+				if (findElement(`${container} .temp.item`, true) || !isElement(event.target)) return;
 
 				const id = options.resolveQuickItem(event.target);
 				if (id === null) return;
@@ -70,8 +74,8 @@ export function createQuickDragHandlers(options: QuickDragHandlerOptions) {
 			}, 10);
 		},
 		async onDragEnd() {
-			document.querySelector(`${container} .temp.item`)?.remove();
-			document.querySelector(`${container} > main`).classList.remove("drag-progress");
+			findElement(`${container} .temp.item`, true)?.remove();
+			findElement(`${container} > main`).classList.remove("drag-progress");
 
 			await options.saveQuickItems();
 		},
@@ -89,7 +93,7 @@ export function initialiseQuickItems() {
 
 	setInterval(() => {
 		for (const timer of findAllElements(".counter-wrap.tt-modified")) {
-			const secondsLeft = Math.max(0, parseInt(timer.dataset.secondsLeft ?? timer.dataset.time) - 1);
+			const secondsLeft = Math.max(0, parseInt(timer.dataset.secondsLeft ?? timer.dataset.time!) - 1);
 
 			timer.textContent = formatTime({ seconds: secondsLeft }, { type: "timer", daysToHours: true });
 			timer.dataset.secondsLeft = `${secondsLeft}`;
@@ -133,6 +137,10 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 	let movingElement: Element | undefined;
 	const editListenerItems = new Set<HTMLElement>();
 
+	function requireContainerElements() {
+		return controlledContainerElements!;
+	}
+
 	function create() {
 		const {
 			container,
@@ -160,17 +168,16 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 						event.stopPropagation();
 						isEditing = (event.currentTarget as Element).classList.toggle("tt-overlay-item");
 
-						if (controlledContainerElements.content) {
-							findAllElements(".item", controlledContainerElements.content).forEach((item) => {
-								item.classList.toggle("tt-overlay-item", isEditing);
-								item.classList.toggle("removable", isEditing);
-							});
-							options.getOverlayItems().forEach((item) => item.classList.toggle("tt-overlay-item", isEditing));
-							options.onEditToggle?.(isEditing);
-							document.querySelector(".tt-overlay")?.classList.toggle("tt-hidden", !isEditing);
-							if (isEditing) attachEditListeners();
-							else detachEditListeners();
-						}
+						const elements = requireContainerElements();
+						findAllElements(".item", elements.content).forEach((item) => {
+							item.classList.toggle("tt-overlay-item", isEditing);
+							item.classList.toggle("removable", isEditing);
+						});
+						options.getOverlayItems().forEach((item) => item.classList.toggle("tt-overlay-item", isEditing));
+						options.onEditToggle?.(isEditing);
+						findElement(".tt-overlay", true)?.classList.toggle("tt-hidden", !isEditing);
+						if (isEditing) attachEditListeners();
+						else detachEditListeners();
 					},
 				},
 			}),
@@ -227,6 +234,7 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 		if (!isHTMLElement(event.target)) return;
 
 		const item = options.parseSourceItem(event.target);
+		if (!item) return;
 
 		const itemElement = addQuickItem(item, false);
 		if (itemElement) itemElement.classList.add("tt-overlay-item", "removable");
@@ -236,18 +244,20 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 
 	function addQuickItem(item: QuickItem, temporary = false) {
 		const { id } = item;
+		const elements = requireContainerElements();
 
-		if (controlledContainerElements.content.querySelector(`.item[data-id='${id}']`))
-			return controlledContainerElements.content.querySelector(`.item[data-id='${id}']`);
-		if (!options.allowQuickItem(id, typeof id === "number" ? ITEM_RESOLVER.getStaticItem(id)?.type : null)) return null;
+		const existingItem = findElement(`.item[data-id='${id}']`, elements.content, true);
+		if (existingItem) return existingItem;
+
+		if (!options.allowQuickItem(id, typeof id === "number" ? (ITEM_RESOLVER.getStaticItem(id)?.type ?? null) : null)) return null;
 
 		const dataset: Record<string, any> = { id };
 		if (isSpecialAction(id)) {
 			const action = getSpecialAction(id);
 
 			dataset.action = action.name;
-		} else if (typeof id === "number" && isEquipable(id, ITEM_RESOLVER.getStaticItem(id)?.type)) {
-			dataset.equipPosition = getEquipPosition(id, ITEM_RESOLVER.getStaticItem(id)?.type);
+		} else if (typeof id === "number" && isEquipable(id, ITEM_RESOLVER.getStaticItem(id)?.type ?? "")) {
+			dataset.equipPosition = getEquipPosition(id, ITEM_RESOLVER.getStaticItem(id)?.type ?? "");
 		}
 
 		const itemWrap = elementBuilder({
@@ -267,7 +277,7 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 					if (
 						settings.pages.items.energyWarning &&
 						typeof id === "number" &&
-						["Drug", "Energy Drink"].includes(ITEM_RESOLVER.getStaticItem(id)?.type)
+						["Drug", "Energy Drink"].includes(ITEM_RESOLVER.getStaticItem(id)?.type ?? "")
 					) {
 						const received = getItemEnergy(id);
 						if (received) {
@@ -279,12 +289,12 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 
 					await options.useQuickItem(item, {
 						itemWrap,
-						responseWrap: controlledContainerElements.responseWrap,
-						innerContent: controlledContainerElements.innerContent,
+						responseWrap: elements.responseWrap,
+						innerContent: elements.innerContent,
 					});
 				}),
 				dragstart(event) {
-					if (!isElement(event.currentTarget)) return;
+					if (!isElement(event.currentTarget) || !event.dataTransfer) return;
 
 					event.dataTransfer.effectAllowed = "move";
 					event.dataTransfer.setDragImage(event.currentTarget, 0, 0);
@@ -292,7 +302,7 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 					movingElement = event.currentTarget;
 				},
 				async dragend() {
-					movingElement.classList.remove("temp");
+					movingElement?.classList.remove("temp");
 					movingElement = undefined;
 
 					await saveQuickItems();
@@ -301,16 +311,16 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 					event.preventDefault();
 				},
 				dragenter(event) {
-					if (movingElement === event.currentTarget || !isElement(event.currentTarget)) return;
+					if (!movingElement || movingElement === event.currentTarget || !isElement(event.currentTarget)) return;
 
-					const children = Array.from(controlledContainerElements.innerContent.children);
+					const children = Array.from(elements.innerContent.children);
 
-					if (children.indexOf(movingElement) > children.indexOf(event.currentTarget))
-						controlledContainerElements.innerContent.insertBefore(movingElement, event.currentTarget);
-					else if (event.currentTarget.nextElementSibling) {
-						controlledContainerElements.innerContent.insertBefore(movingElement, event.currentTarget.nextElementSibling);
+					if (children.indexOf(movingElement) > children.indexOf(event.currentTarget)) {
+						elements.innerContent.insertBefore(movingElement, event.currentTarget);
+					} else if (event.currentTarget.nextElementSibling) {
+						elements.innerContent.insertBefore(movingElement, event.currentTarget.nextElementSibling);
 					} else {
-						controlledContainerElements.innerContent.appendChild(movingElement);
+						elements.innerContent.appendChild(movingElement);
 					}
 					movingElement.classList.add("temp");
 				},
@@ -337,7 +347,7 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 			}),
 		});
 		itemWrap.appendChild(closeIcon);
-		controlledContainerElements.innerContent.appendChild(itemWrap);
+		elements.innerContent.appendChild(itemWrap);
 		return itemWrap;
 	}
 
@@ -351,6 +361,8 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 			if (staticItem) {
 				wrapper.setAttribute("title", staticItem.name);
 				wrapper.appendChild(elementBuilder({ type: "div", class: styles.name, text: staticItem.name }));
+
+				highlightBloodBag(item.id, staticItem.name, wrapper);
 			} else {
 				wrapper.appendChild(elementBuilder({ type: "div", class: styles.name, text: item.id }));
 			}
@@ -366,13 +378,27 @@ export function createQuickItemsController(options: QuickItemsControllerOptions)
 		}
 	}
 
+	function highlightBloodBag(id: number, name: string, wrapper: HTMLElement) {
+		wrapper.classList.remove("good-blood", "bad-blood");
+
+		if (
+			!settings.pages.items.highlightQuickItemBloodBags ||
+			settings.pages.items.highlightBloodBags === "none" ||
+			!name.startsWith("Blood Bag : ") ||
+			id === IRRADIATED_BLOOD_BAG
+		)
+			return;
+
+		const bloodType = getBloodType();
+		const allowedBlood: number[] = (bloodType && ALLOWED_BLOOD[bloodType]) ?? [];
+		wrapper.classList.add(allowedBlood.includes(id) ? "good-blood" : "bad-blood");
+	}
+
 	async function saveQuickItems() {
+		const elements = requireContainerElements();
 		await ttStorage.change({
 			quick: {
-				[options.storageKey]: findAllElements(".item", controlledContainerElements.innerContent)
-					.map((x) => x.dataset.id)
-					.map<QuickItemId>(parseQuickItemId)
-					.map<QuickItem>((x) => ({ id: x })),
+				[options.storageKey]: findAllElements(".item", elements.innerContent).map((x) => ({ id: parseQuickItemId(x.dataset.id!) })),
 			},
 		});
 	}

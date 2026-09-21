@@ -1,7 +1,7 @@
 import "./high-low-helper.css";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { capitalizeText } from "@common/utils/functions/formatting";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { Feature } from "@features/feature";
@@ -11,8 +11,6 @@ shuffleDeck();
 
 function initialiseHelper() {
 	addXHRListener(({ detail: { page, xhr, json } }) => {
-		if (!FEATURE_MANAGER.isEnabled(HighLowHelperFeature)) return;
-
 		if (page === "page") {
 			const params = new URL(xhr.responseURL).searchParams;
 			const sid = params.get("sid");
@@ -70,16 +68,17 @@ function executeStrategy(data: any) {
 	else if (higher > lower) outcome = "higher";
 	else outcome = "50/50";
 
-	const actions = document.querySelector<HTMLElement>(".actions-wrap");
+	const actions = findElement(".actions-wrap");
 	if (settings.pages.casino.highlowMovement) {
 		let action: string;
 		if (outcome === "lower" || outcome === "higher") action = outcome;
 		else if (outcome === "50/50") action = Math.random() < 0.5 ? "higher" : "lower";
+		else return;
 
 		actions.dataset.outcome = action;
-		document.querySelector<HTMLElement>(".startGame").style.display = "none";
+		findElement(".startGame").style.display = "none";
 	} else {
-		const element = actions.querySelector(".tt-high-low");
+		const element = findElement(".tt-high-low", actions, true);
 		if (element) element.textContent = outcome;
 		else actions.appendChild(elementBuilder({ type: "span", class: "tt-high-low", text: capitalizeText(outcome) }));
 	}
@@ -102,12 +101,12 @@ function getCardWorth({ classCode, nameShort }: { classCode: string; nameShort: 
 function moveStart() {
 	if (!settings.pages.casino.highlowMovement) return;
 
-	const actionsWrap = document.querySelector<HTMLElement>(".actions-wrap");
-	const actions = document.querySelector(".actions");
-	const startButton = document.querySelector<HTMLElement>(".startGame");
-	const lowButton = document.querySelector<HTMLElement>(".low");
-	const highButton = document.querySelector<HTMLElement>(".high");
-	const continueButton = document.querySelector<HTMLElement>(".continue");
+	const actionsWrap = findElement(".actions-wrap");
+	const actions = findElement(".actions");
+	const startButton = findElement(".startGame");
+	const lowButton = findElement(".low");
+	const highButton = findElement(".high");
+	const continueButton = findElement(".continue");
 
 	actionsWrap.style.display = "block";
 	actions.appendChild(startButton);
@@ -131,11 +130,11 @@ function removeCard(suit: string, value: number) {
 }
 
 function removeHelper() {
-	const actions = document.querySelector<HTMLElement>(".actions-wrap");
+	const actions = findElement(".actions-wrap", true);
 
 	if (actions) {
 		delete actions.dataset.outcome;
-		actions.querySelector(".tt-high-low")?.remove();
+		findElement(".tt-high-low", actions, true)?.remove();
 	}
 }
 

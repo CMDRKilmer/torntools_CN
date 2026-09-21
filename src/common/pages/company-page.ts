@@ -4,6 +4,7 @@ import { hasAPIData } from "@common/utils/functions/api";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import { getHashParameters, isElement } from "@common/utils/functions/dom";
 import { EVENT_CHANNELS, triggerCustomListener } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { isIntNumber, TO_MILLIS } from "@common/utils/functions/utilities";
 
@@ -11,7 +12,7 @@ export const isOwnCompany = location.pathname === "/companies.php";
 
 export function setupCompanyPage() {
 	if (!isOwnCompany) {
-		requireElement(".content #mainContainer .employees-wrap").then(() => {
+		requireElement(".content #mainContainer .content-wrapper").then(() => {
 			new MutationObserver(async (mutations) => {
 				if (
 					!(mutations.length > 1) ||
@@ -25,7 +26,7 @@ export function setupCompanyPage() {
 					return;
 
 				triggerCustomListener(EVENT_CHANNELS.COMPANY_EMPLOYEES_PAGE);
-			}).observe(document.querySelector(".content #mainContainer .content-wrapper"), { childList: true });
+			}).observe(findElement(".content #mainContainer .content-wrapper"), { childList: true });
 		});
 	} else {
 		window.addEventListener("hashchange", () => {
@@ -48,11 +49,11 @@ export async function readCompanyDetails() {
 	const params = getHashParameters();
 
 	if (isIntNumber(params.get("ID"))) {
-		return { id: parseInt(params.get("ID")) };
+		return { id: parseInt(params.get("ID")!) };
 	}
 
 	if (isIntNumber(params.get("userID")) && hasAPIData()) {
-		return { id: await getCompanyIDFromUser(parseInt(params.get("userID"))) };
+		return { id: await getCompanyIDFromUser(parseInt(params.get("userID")!)) };
 	}
 
 	return null; // ID could not be found

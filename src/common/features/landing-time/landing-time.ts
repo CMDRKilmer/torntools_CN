@@ -1,6 +1,7 @@
 import "./landing-time.css";
 import { settings } from "@common/utils/data/database";
 import { elementBuilder } from "@common/utils/functions/dom";
+import { findElement } from "@common/utils/functions/find-elements";
 import { formatTime, textToTime } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { isFlying } from "@common/utils/functions/torn";
@@ -9,14 +10,14 @@ import { Feature } from "@features/feature";
 async function showTime() {
 	const destinationTitle = await requireElement("#travel-root [class*='progressTextLineBreaker___']");
 
-	if (destinationTitle.parentElement.querySelector(".tt-landing-time")) return;
+	if (findElement(".tt-landing-time", destinationTitle.parentElement!, true)) return;
 
 	const timer = await requireElement("#travel-root time[datetime]");
 	const duration = textToTime(timer.textContent);
 
 	const arrival = Date.now() + duration;
 
-	destinationTitle.parentElement.insertBefore(
+	destinationTitle.parentElement!.insertBefore(
 		elementBuilder({
 			type: "div",
 			class: "tt-landing-time",

@@ -1,12 +1,12 @@
 import { isInternalFaction, readFactionDetails } from "@common/pages/factions-page";
 import "./show-faction-spy.css";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { ttCache } from "@common/utils/data/cache";
 import { settings } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { fetchData } from "@common/utils/functions/api-fetcher";
 import type { TornstatsFactionSpyResponse, YATASpyResponse } from "@common/utils/functions/api.types";
-import { elementBuilder, findAllElements, mobile } from "@common/utils/functions/dom";
+import { elementBuilder, mobile } from "@common/utils/functions/dom";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { formatNumber, formatTime } from "@common/utils/functions/formatting";
 import { executePriorityServices, PriorityService } from "@common/utils/functions/priority-services";
 import { requireElement } from "@common/utils/functions/requires";
@@ -52,7 +52,7 @@ class TornStatsFactionSpyPerformer extends FactionSpyPerformer {
 		let isCached = false;
 
 		if (ttCache.hasValue("faction-spy-tornstats", this.factionID)) {
-			data = ttCache.get<TornstatsFactionSpyResponse>("faction-spy-tornstats", this.factionID);
+			data = ttCache.get<TornstatsFactionSpyResponse>("faction-spy-tornstats", this.factionID)!;
 			isCached = true;
 		} else {
 			data = await fetchData<TornstatsFactionSpyResponse>("tornstats", { section: "spy/faction", id: this.factionID });
@@ -62,7 +62,7 @@ class TornStatsFactionSpyPerformer extends FactionSpyPerformer {
 		const spies: Record<string, FactionSpyData> =
 			data.status && data.faction.spies
 				? Object.entries(data.faction.members).reduce<Record<string, FactionSpyData>>((spies, [memberID, { spy }]) => {
-						spies[memberID] = spy;
+						if (spy) spies[memberID] = spy;
 						return spies;
 					}, {})
 				: {};
@@ -87,7 +87,7 @@ class YATAFactionSpyPerformer extends FactionSpyPerformer {
 		let isCached = false;
 
 		if (ttCache.hasValue("faction-spy-yata", this.factionID)) {
-			data = ttCache.get<YATASpyResponse>("faction-spy-yata", this.factionID);
+			data = ttCache.get<YATASpyResponse>("faction-spy-yata", this.factionID)!;
 			isCached = true;
 		} else {
 			data = await fetchData<YATASpyResponse>("yata", { relay: true, section: "spies", includeKey: true, params: { faction: this.factionID } });
@@ -134,8 +134,6 @@ function formatSpyStats(spyData: FactionSpyData) {
 
 function registerListeners() {
 	window.addEventListener("hashchange", async (e) => {
-		if (!FEATURE_MANAGER.isEnabled(ShowFactionSpyFeature)) return;
-
 		if (e.newURL.includes("#/war/rank")) await fetchAndAddSpies();
 		else removeSpies(true);
 	});
@@ -157,11 +155,11 @@ async function fetchAndAddSpies() {
 
 	await requireElement(".members-list .table-body > li .status");
 
-	const tableBody = document.querySelector(".members-list .table-body");
+	const tableBody = findElement(".members-list .table-body");
 	tableBody.classList.add("tt-modified-faction-spy");
 
 	Array.from(tableBody.children).forEach((row) => {
-		const memberID = row.querySelector(".member.icons [href*='/profiles.php']")?.getAttribute("href").split("XID=")[1];
+		const memberID = findElement(".member.icons [href*='/profiles.php']", row, true)?.getAttribute("href")!.split("XID=")[1];
 		if (!memberID) return;
 		const spyData = spies[memberID];
 
@@ -195,12 +193,12 @@ async function fetchAndAddSpies() {
 
 async function showRWSpies() {
 	const enemiesMembersList = await requireElement(".act[class*='warListItem__'] ~ .descriptions .faction-war .enemy-faction.left .members-list");
-	const enemyFactionID = parseInt(enemiesMembersList.querySelector("a[href*='/factions.php?step=profile&ID=']").getAttribute("href").split("ID=")[1]);
+	const enemyFactionID = parseInt(findElement("a[href*='/factions.php?step=profile&ID=']", enemiesMembersList).getAttribute("href")!.split("ID=")[1]);
 
 	const spies = await fetchSpies(enemyFactionID);
 
 	Array.from(enemiesMembersList.children).forEach((row) => {
-		const memberID = row.querySelector("a[href*='/profiles.php']").getAttribute("href").split("XID=")[1];
+		const memberID = findElement("a[href*='/profiles.php']", row).getAttribute("href")!.split("XID=")[1];
 		const spyData = spies[memberID];
 
 		let statFields = [];
@@ -233,7 +231,7 @@ async function showRWSpies() {
 
 function removeSpies(onlyRWSpies = false) {
 	if (!onlyRWSpies) {
-		document.querySelector(".tt-modified-faction-spy")?.classList.remove("tt-modified-faction-spy");
+		findElement(".tt-modified-faction-spy", true)?.classList.remove("tt-modified-faction-spy");
 		findAllElements(".tt-faction-spy").forEach((x) => x.remove());
 	}
 	findAllElements(".tt-faction-rw-spy").forEach((x) => x.remove());

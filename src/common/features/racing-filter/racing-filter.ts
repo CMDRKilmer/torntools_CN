@@ -1,8 +1,9 @@
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { filters, settings } from "@common/utils/data/database";
 import { getSearchParameters, isTextNode } from "@common/utils/functions/dom";
 import { checkboxesSection, createFilter, multiSelectSection, sliderSection, textSection } from "@common/utils/functions/filters";
 import type { FilterController, SliderRange } from "@common/utils/functions/filters";
+import { findElement } from "@common/utils/functions/find-elements";
 import { addXHRListener } from "@common/utils/functions/listeners";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
@@ -12,7 +13,7 @@ let filter: FilterController | undefined;
 
 function initialiseListeners() {
 	addXHRListener(async ({ detail: { page, ...detail } }) => {
-		if (!FEATURE_MANAGER.isEnabled(RacingFilterFeature) || !("uri" in detail)) return;
+		if (!("uri" in detail)) return;
 
 		const { uri } = detail;
 		if (page === "page" && uri) {
@@ -25,7 +26,7 @@ function initialiseListeners() {
 				return;
 			}
 
-			if (!detail.xhr.responseText.includes("events-list")) return;
+			if (!detail.xhr.responseText!.includes("events-list")) return;
 
 			await requireElement(".events-list");
 			void addFilterContainer();
@@ -73,7 +74,7 @@ async function addFilterContainer() {
 		container: {
 			title: "Racing Filter",
 			class: "mt10",
-			nextElement: document.querySelector(".custom-events-wrap"),
+			nextElement: findElement(".custom-events-wrap"),
 			compact: true,
 		},
 		statisticsLabel: "races",
@@ -100,7 +101,7 @@ async function addFilterContainer() {
 					if (hideRaces.includes("incompatible") && isIncompatible) return false;
 
 					if (hideRaces.includes("paid")) {
-						const feeEl = row.querySelector<HTMLElement>("li.fee");
+						const feeEl = findElement("li.fee", row, true);
 						if (feeEl) {
 							const feeAmount = parseInt(feeEl.textContent.replaceAll(/\D/g, ""), 10);
 							if (feeAmount > 0) return false;
@@ -108,7 +109,7 @@ async function addFilterContainer() {
 					}
 
 					if (hideRaces.includes("full")) {
-						const driversEl = row.querySelector<HTMLElement>("li.drivers");
+						const driversEl = findElement("li.drivers", row, true);
 						if (driversEl) {
 							const match = driversEl.textContent.replaceAll(/\s+/g, "").match(/(\d+)\/(\d+)/);
 							if (match && parseInt(match[1], 10) >= parseInt(match[2], 10)) return false;
@@ -116,7 +117,7 @@ async function addFilterContainer() {
 					}
 
 					if (hideRaces.includes("limited-car")) {
-						const limited = !row.querySelector(".car")?.textContent.trim().includes("Any car");
+						const limited = !findElement(".car", row, true)?.textContent.trim().includes("Any car");
 						if (limited) return false;
 					}
 
@@ -131,14 +132,14 @@ async function addFilterContainer() {
 				defaults: { low: filters.racing.timeStart, high: filters.racing.timeEnd },
 				formatCounter: (r) => `Race Start In ${r.start}h - ${r.end}h`,
 				test: (row, range) => {
-					const timeText = row.querySelector<HTMLElement>(".event-wrap .startTime").textContent.trim();
+					const timeText = findElement(".event-wrap .startTime", row).textContent.trim();
 					if (!timeText || timeText.toLowerCase() === "waiting") {
 						return range.start === 0 && range.end === 0;
 					}
 
 					const clean = timeText.toLowerCase();
-					const hours = parseInt(clean.match(/(\d+)\s*h/)?.[1]) || 0;
-					const minutes = parseInt(clean.match(/(\d+)\s*m/)?.[1]) || 0;
+					const hours = parseInt(clean.match(/(\d+)\s*h/)?.[1] ?? "") || 0;
+					const minutes = parseInt(clean.match(/(\d+)\s*m/)?.[1] ?? "") || 0;
 					const totalHours = hours + Math.floor(minutes / 60);
 
 					if (range.start && totalHours < range.start) return false;
@@ -155,7 +156,7 @@ async function addFilterContainer() {
 				defaults: { low: filters.racing.lapsMin, high: filters.racing.lapsMax },
 				formatCounter: (r) => `Laps ${r.start} - ${r.end}`,
 				test: (row, range) => {
-					const laps = parseInt(row.querySelector(".laps").textContent.match(/\d+/)[0], 10);
+					const laps = parseInt(findElement(".laps", row).textContent.match(/\d+/)?.[0] ?? "", 10);
 					return laps >= range.start && laps <= range.end;
 				},
 			}),
@@ -167,7 +168,7 @@ async function addFilterContainer() {
 				defaults: { low: filters.racing.driversMin, high: filters.racing.driversMax },
 				formatCounter: (r) => `Maximum Drivers ${r.start} - ${r.end}`,
 				test: (row, range) => {
-					const driversEl = row.querySelector<HTMLElement>("li.drivers");
+					const driversEl = findElement("li.drivers", row, true);
 					if (!driversEl) return true;
 
 					const match = driversEl.textContent.replaceAll(/\s+/g, "").match(/(\d+)\/(\d+)/);
@@ -186,7 +187,7 @@ async function addFilterContainer() {
 				test: (row, track) => {
 					if (!track.length) return true;
 
-					const trackEl = row.querySelector("li.track");
+					const trackEl = findElement("li.track", row);
 					const trackName = Array.from(trackEl.childNodes)
 						.filter(isTextNode)
 						.map((node) => node.textContent.trim())
@@ -204,7 +205,7 @@ async function addFilterContainer() {
 				test: (row, name) => {
 					if (!name) return true;
 
-					const raceName = row.querySelector<HTMLElement>(".event-wrap .name").textContent;
+					const raceName = findElement(".event-wrap .name", row).textContent;
 
 					return raceName.toLowerCase().includes(name.toLowerCase());
 				},

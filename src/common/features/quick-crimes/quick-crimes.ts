@@ -1,10 +1,11 @@
 import "./quick-crimes.css";
-import { FEATURE_MANAGER, ttStorage } from "@common/utils/context";
+import { ttStorage } from "@common/utils/context";
 import { quick, settings } from "@common/utils/data/database";
 import { usingFirefox } from "@common/utils/functions/browser";
 import { createContainer, findContainer } from "@common/utils/functions/containers";
-import { elementBuilder, findAllElements, getSearchParameters, isElement, mobile, tablet } from "@common/utils/functions/dom";
+import { elementBuilder, getSearchParameters, isElement, mobile, tablet } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus } from "@common/utils/functions/torn";
 import { PHFillPlus, PHX } from "@common/utils/icons/phosphor-icons";
@@ -22,16 +23,8 @@ let movingElement: Element | undefined;
 let showCrimesAgainOnFirefoxObserver: MutationObserver | undefined;
 
 function initialise() {
-	addCustomListener(EVENT_CHANNELS.CRIMES_LOADED, async () => {
-		if (!FEATURE_MANAGER.isEnabled(QuickCrimesFeature)) return;
-
-		await loadCrimes();
-	});
-	addCustomListener(EVENT_CHANNELS.CRIMES_CRIME, async () => {
-		if (!FEATURE_MANAGER.isEnabled(QuickCrimesFeature)) return;
-
-		await loadCrimes();
-	});
+	addCustomListener(EVENT_CHANNELS.CRIMES_LOADED, loadCrimes);
+	addCustomListener(EVENT_CHANNELS.CRIMES_CRIME, loadCrimes);
 }
 
 async function loadCrimes() {
@@ -39,7 +32,7 @@ async function loadCrimes() {
 
 	const isTouchDevice = mobile || tablet;
 	const { container, content, options } = createContainer("Quick Crimes", {
-		previousElement: document.querySelector(".content-title"),
+		previousElement: findElement(".content-title"),
 		allowDragging: true,
 		compact: true,
 	});
@@ -57,10 +50,10 @@ async function loadCrimes() {
 				click: (event) => {
 					event.stopPropagation();
 
-					const enabled = options.querySelector("#edit-items-button").classList.toggle("tt-overlay-item");
+					const enabled = findElement("#edit-items-button", options).classList.toggle("tt-overlay-item");
 
 					for (const crime of findAllElements(".quick-item", content)) {
-						const item = crime.querySelector(".forced-item");
+						const item = findElement(".forced-item", crime);
 						if (enabled) {
 							crime.classList.add("tt-overlay-item", "removable");
 							item.classList.remove("item");
@@ -71,11 +64,11 @@ async function loadCrimes() {
 					}
 
 					if (enabled) {
-						document.querySelector(".tt-overlay").classList.remove("tt-hidden");
+						findElement(".tt-overlay").classList.remove("tt-hidden");
 
 						const draggableCrimes = findAllElements(".specials-cont-wrap form[name='crimes'] .item[draggable='true']");
 						if (draggableCrimes.length) {
-							draggableCrimes[0].closest(".specials-cont-wrap form[name='crimes']").classList.add("tt-overlay-item");
+							draggableCrimes[0].closest(".specials-cont-wrap form[name='crimes']")!.classList.add("tt-overlay-item");
 
 							for (const crime of draggableCrimes) {
 								crime.addEventListener("click", onCrimeClick);
@@ -83,11 +76,11 @@ async function loadCrimes() {
 							}
 						}
 					} else {
-						document.querySelector(".tt-overlay").classList.add("tt-hidden");
+						findElement(".tt-overlay").classList.add("tt-hidden");
 
 						const nonDraggableCrimes = findAllElements(".specials-cont-wrap form[name='crimes'] .item[draggable='false']");
 						if (nonDraggableCrimes.length) {
-							nonDraggableCrimes[0].closest(".specials-cont-wrap form[name='crimes']").classList.remove("tt-overlay-item");
+							nonDraggableCrimes[0].closest(".specials-cont-wrap form[name='crimes']")!.classList.remove("tt-overlay-item");
 
 							for (const crime of nonDraggableCrimes) {
 								crime.removeEventListener("click", onCrimeClick);
@@ -107,11 +100,11 @@ async function loadCrimes() {
 	makeDraggable();
 
 	function makeDraggable() {
-		const form = document.querySelector(".specials-cont-wrap form[name='crimes']");
+		const form = findElement(".specials-cont-wrap form[name='crimes']", true);
 		if (!form?.hasAttribute("action")) return;
 
 		const action = `${location.origin}/${form.getAttribute("action")}`;
-		const step = getSearchParameters(action).get("step");
+		const step = getSearchParameters(action).get("step")!;
 		if (!["docrime2", "docrime4"].includes(step)) return;
 
 		for (const crime of findAllElements("ul.item", form)) {
@@ -126,27 +119,27 @@ async function loadCrimes() {
 	}
 
 	function onDragStart(event: DragEvent) {
-		if (!isElement(event.target)) return;
+		if (!isElement(event.target) || !event.dataTransfer) return;
 		const target = event.target;
 
-		event.dataTransfer.setData("text/plain", null);
+		event.dataTransfer.setData("text/plain", "");
 
 		setTimeout(() => {
-			document.querySelector("#quickCrimes > main").classList.add("drag-progress");
-			if (document.querySelector("#quickCrimes .temp.quick-item")) return;
+			findElement("#quickCrimes > main").classList.add("drag-progress");
+			if (findElement("#quickCrimes .temp.quick-item", true)) return;
 
-			const form = document.querySelector(".specials-cont-wrap form[name='crimes']");
-			const nerve = parseInt(form.querySelector<HTMLInputElement>("input[name='nervetake']").value);
+			const form = findElement(".specials-cont-wrap form[name='crimes']");
+			const nerve = parseInt(findElement<HTMLInputElement>("input[name='nervetake']", form).value);
 
 			const action = `${location.origin}/${form.getAttribute("action")}`;
-			const step = getSearchParameters(action).get("step");
+			const step = getSearchParameters(action).get("step")!;
 
 			const data = {
 				step,
 				nerve,
-				name: target.querySelector<HTMLInputElement>(".choice-container input").value,
-				icon: target.querySelector<HTMLImageElement>(".title img").src,
-				text: target.querySelector(".bonus").textContent.trim(),
+				name: findElement<HTMLInputElement>(".choice-container input", target).value,
+				icon: findElement<HTMLImageElement>(".title img", target).src,
+				text: findElement(".bonus", target).textContent.trim(),
 			};
 
 			addQuickCrime(data, true);
@@ -154,22 +147,22 @@ async function loadCrimes() {
 	}
 
 	async function onDragEnd() {
-		if (document.querySelector("#quickCrimes .temp.quick-item")) {
-			document.querySelector("#quickCrimes .temp.quick-item").remove();
+		if (findElement("#quickCrimes .temp.quick-item", true)) {
+			findElement("#quickCrimes .temp.quick-item").remove();
 		}
 
-		document.querySelector("#quickCrimes > main").classList.remove("drag-progress");
+		findElement("#quickCrimes > main").classList.remove("drag-progress");
 
 		await saveCrimes();
 	}
 
 	function addQuickCrime(data: QuickCrime, temporary: boolean) {
-		const content = findContainer("Quick Crimes", { selector: ":scope > main" });
-		const innerContent = content.querySelector(".inner-content");
+		const content = findContainer("Quick Crimes", { selector: ":scope > main" })!;
+		const innerContent = findElement(".inner-content", content);
 
 		const { step, nerve, name, icon, text } = data;
 
-		if (innerContent.querySelector(`.quick-item[data-id='${name}']`)) return null;
+		if (findElement(`.quick-item[data-id='${name}']`, innerContent, true)) return null;
 
 		const closeIcon = elementBuilder({
 			type: "svg",
@@ -211,13 +204,15 @@ async function loadCrimes() {
 					}
 				},
 				dragstart(event) {
+					if (!event.dataTransfer) return;
+
 					event.dataTransfer.effectAllowed = "move";
 					event.dataTransfer.setDragImage(event.currentTarget as Element, 0, 0);
 
 					movingElement = event.currentTarget as Element;
 				},
 				async dragend() {
-					movingElement.classList.remove("temp");
+					movingElement?.classList.remove("temp");
 					movingElement = undefined;
 
 					await saveCrimes();
@@ -226,18 +221,18 @@ async function loadCrimes() {
 					event.preventDefault();
 				},
 				dragenter(event) {
-					if (movingElement !== event.currentTarget && isElement(event.currentTarget)) {
-						const children = Array.from(innerContent.children);
+					if (!movingElement || movingElement === event.currentTarget || !isElement(event.currentTarget)) return;
 
-						if (children.indexOf(movingElement) > children.indexOf(event.currentTarget))
-							innerContent.insertBefore(movingElement, event.currentTarget);
-						else if (event.currentTarget.nextElementSibling) {
-							innerContent.insertBefore(movingElement, event.currentTarget.nextElementSibling);
-						} else {
-							innerContent.appendChild(movingElement);
-						}
-						movingElement.classList.add("temp");
+					const children = Array.from(innerContent.children);
+
+					if (children.indexOf(movingElement) > children.indexOf(event.currentTarget)) {
+						innerContent.insertBefore(movingElement, event.currentTarget);
+					} else if (event.currentTarget.nextElementSibling) {
+						innerContent.insertBefore(movingElement, event.currentTarget.nextElementSibling);
+					} else {
+						innerContent.appendChild(movingElement);
 					}
+					movingElement.classList.add("temp");
 				},
 			},
 			attributes: {
@@ -253,13 +248,13 @@ async function loadCrimes() {
 	}
 
 	async function saveCrimes() {
-		const content = findContainer("Quick Crimes", { selector: ":scope > main" });
+		const content = findContainer("Quick Crimes", { selector: ":scope > main" })!;
 
 		await ttStorage.change({
 			quick: {
 				crimes: findAllElements(".quick-item", content).map((crime) => ({
 					step: crime.dataset.step,
-					nerve: parseInt(crime.dataset.nerve),
+					nerve: parseInt(crime.dataset.nerve!),
 					name: crime.dataset.name,
 					icon: crime.dataset.icon,
 					text: crime.dataset.text,
@@ -274,26 +269,27 @@ async function loadCrimes() {
 
 		if (!isElement(event.target)) return;
 
-		const item = event.target.closest(".item");
+		const item = event.target.closest(".item")!;
 
-		const form = document.querySelector(".specials-cont-wrap form[name='crimes']");
-		const nerve = parseInt(form.querySelector<HTMLInputElement>("input[name='nervetake']").value);
+		const form = findElement(".specials-cont-wrap form[name='crimes']");
+		const nerve = parseInt(findElement<HTMLInputElement>("input[name='nervetake']", form).value);
 
 		const action = `${location.origin}/${form.getAttribute("action")}`;
-		const step = getSearchParameters(action).get("step");
+		const step = getSearchParameters(action).get("step")!;
 
 		const data = {
 			step,
 			nerve,
-			name: item.querySelector<HTMLInputElement>(".choice-container input").value,
-			icon: item.querySelector<HTMLImageElement>(".title img").src,
-			text: item.querySelector(".bonus").textContent.trim(),
+			name: findElement<HTMLInputElement>(".choice-container input", item).value,
+			icon: findElement<HTMLImageElement>(".title img", item).src,
+			text: findElement(".bonus", item).textContent.trim(),
 		};
 
 		const quick = addQuickCrime(data, false);
+		if (!quick) return;
 
 		quick.classList.add("removable", "tt-overlay-item");
-		quick.querySelector(".item").classList.remove("item");
+		findElement(".item", quick).classList.remove("item");
 
 		await saveCrimes();
 	}
@@ -318,7 +314,7 @@ function showCrimesAgainOnFirefox(containerId: string) {
 
 		await loadCrimes();
 	});
-	showCrimesAgainOnFirefoxObserver.observe(document.querySelector(".content-wrapper"), { childList: true, attributes: true, subtree: true });
+	showCrimesAgainOnFirefoxObserver.observe(findElement(".content-wrapper"), { childList: true, attributes: true, subtree: true });
 }
 
 export default class QuickCrimesFeature extends Feature {

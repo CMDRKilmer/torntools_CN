@@ -4,6 +4,7 @@ import { filters, settings } from "@common/utils/data/database";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
 import { checkboxesSection, checkboxSection, createFilter, selectorExemption } from "@common/utils/functions/filters";
 import type { FilterController } from "@common/utils/functions/filters";
+import { findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus, isAbroad, TAX_RATES } from "@common/utils/functions/torn";
@@ -18,20 +19,16 @@ let filter: FilterController;
 
 function initialiseListeners() {
 	addCustomListener(EVENT_CHANNELS.FEATURE_ENABLED, (feature) => {
-		if (!FEATURE_MANAGER.isEnabled(AbroadItemsFilterFeature) || feature.name !== "Travel Item Profits") return;
+		if (feature.name !== "Travel Item Profits") return;
 
 		filter.rerenderSections();
 	});
 	addCustomListener(EVENT_CHANNELS.FEATURE_RELOADED, (feature) => {
-		if (!FEATURE_MANAGER.isEnabled(AbroadItemsFilterFeature) || feature.name !== "Travel Item Profits") return;
+		if (feature.name !== "Travel Item Profits") return;
 
 		filter.rerenderSections();
 	});
-	addCustomListener(EVENT_CHANNELS.TRAVEL_ABROAD__SHOP_REFRESH, async () => {
-		if (!FEATURE_MANAGER.isEnabled(AbroadItemsFilterFeature)) return;
-
-		await filter.run();
-	});
+	addCustomListener(EVENT_CHANNELS.TRAVEL_ABROAD__SHOP_REFRESH, () => filter.run());
 }
 
 type AbroadItemsFilterState = {
@@ -59,7 +56,7 @@ async function addFilterContainer() {
 			test: (row, profitOnly) => {
 				if (!profitOnly) return true;
 
-				const profitElement = row.querySelector<HTMLElement>(`.${travelItemProfitsStyles.travelMarketCell}`);
+				const profitElement = findElement(`.${travelItemProfitsStyles.travelMarketCell}`, row, true);
 				if (!profitElement) return false;
 
 				return convertToNumber(profitElement.dataset.ttValue) >= 0;
@@ -74,7 +71,7 @@ async function addFilterContainer() {
 			test: (row, outOfStock) => {
 				if (!outOfStock) return true;
 
-				const stockElement = row.querySelector("[data-tt-content-type='stock']");
+				const stockElement = findElement("[data-tt-content-type='stock']", row, true);
 				if (!stockElement) return true;
 
 				return convertToNumber(stockElement.textContent) > 0;
@@ -97,7 +94,7 @@ async function addFilterContainer() {
 			test: (row, categories) => {
 				if (!categories.length || categories.length === 6) return true;
 
-				const typeElement = row.querySelector("[data-tt-content-type='type']");
+				const typeElement = findElement("[data-tt-content-type='type']", row, true);
 				if (!typeElement) return false;
 
 				const itemCategory = typeElement.textContent.split(" ")[1]?.toLowerCase() ?? "";
@@ -128,7 +125,7 @@ async function addFilterContainer() {
 		container: {
 			title: "Abroad Item Filter",
 			class: "mb10",
-			nextElement: document.querySelector("[class*='shops__']")!,
+			nextElement: findElement("[class*='shops__']"),
 		},
 		statisticsLabel: "items",
 		enabled: filters.abroadItems.enabled,

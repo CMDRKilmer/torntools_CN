@@ -1,10 +1,11 @@
-import { FEATURE_MANAGER, ITEM_RESOLVER, ttStorage } from "@common/utils/context";
+import { ITEM_RESOLVER, ttStorage } from "@common/utils/context";
 import "./travel-table.css";
 import { filters, settings, userdata } from "@common/utils/data/database";
 import { hasAPIData } from "@common/utils/functions/api";
 import { createContainer, findContainer } from "@common/utils/functions/containers";
-import { elementBuilder, findAllElements, mobile, resortTable, sortTable } from "@common/utils/functions/dom";
+import { elementBuilder, mobile, resortTable, sortTable } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findAllElements, findElement } from "@common/utils/functions/find-elements";
 import { convertToNumber, dropDecimals, formatNumber, formatTime } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { createTTTopLinks, getPage, isAbroad, isCaptcha, isFlying, TAX_RATES } from "@common/utils/functions/torn";
@@ -44,18 +45,16 @@ const ANONYMOUS_TAX = TAX_RATES.sellAnonymouslyPercentage;
 
 function initialise() {
 	addCustomListener(EVENT_CHANNELS.TRAVEL_SELECT_TYPE, ({ type }) => {
-		if (!FEATURE_MANAGER.isEnabled(TravelTableFeature)) return;
-
-		document.querySelector<HTMLInputElement>("#travel-items").value = getTravelCount(type as TravelType).toString();
+		findElement<HTMLInputElement>("#travel-items").value = getTravelCount(type as TravelType).toString();
 		updateValues();
 	});
 	addCustomListener(EVENT_CHANNELS.TRAVEL_SELECT_COUNTRY, ({ country }) => {
-		if (!FEATURE_MANAGER.isEnabled(TravelTableFeature) || !settings.pages.travel.autoTravelTableCountry) return;
+		if (!settings.pages.travel.autoTravelTableCountry) return;
 
-		const content = findContainer("Travel Destinations", { selector: ":scope > main" });
+		const content = findContainer("Travel Destinations", { selector: ":scope > main" })!;
 
 		findAllElements(".countries .flag.selected", content).forEach((flag) => flag.classList.remove("selected"));
-		content.querySelector(`.countries .flag[country*="${country}"]`).classList.add("selected");
+		findElement(`.countries .flag[data-country*="${country}"]`, content).classList.add("selected");
 		updateTable(content);
 	});
 }
@@ -152,9 +151,9 @@ async function startTable() {
 									type: "div",
 									class: "table-type-wrap",
 									children: [
-										elementBuilder({ type: "span", class: "table-type", attributes: { type: "basic" }, text: "Basic" }),
+										elementBuilder({ type: "span", class: "table-type", dataset: { type: "basic" }, text: "Basic" }),
 										elementBuilder({ type: "span", text: " / " }),
-										elementBuilder({ type: "span", class: "table-type", attributes: { type: "advanced" }, text: "Advanced" }),
+										elementBuilder({ type: "span", class: "table-type", dataset: { type: "advanced" }, text: "Advanced" }),
 									],
 								}),
 							],
@@ -225,7 +224,8 @@ async function startTable() {
 											children: [
 												elementBuilder({
 													type: "input",
-													attributes: { id: "travel-item-plushies", type: "checkbox", name: "item", category: "plushie" },
+													attributes: { id: "travel-item-plushies", type: "checkbox", name: "item" },
+													dataset: { category: "plushie" },
 												}),
 												elementBuilder({ type: "label", attributes: { for: "travel-item-plushies" }, text: "Plushies" }),
 											],
@@ -236,7 +236,8 @@ async function startTable() {
 											children: [
 												elementBuilder({
 													type: "input",
-													attributes: { id: "travel-item-flowers", type: "checkbox", name: "item", category: "flower" },
+													attributes: { id: "travel-item-flowers", type: "checkbox", name: "item" },
+													dataset: { category: "flower" },
 												}),
 												elementBuilder({ type: "label", attributes: { for: "travel-item-flowers" }, text: "Flowers" }),
 											],
@@ -247,7 +248,8 @@ async function startTable() {
 											children: [
 												elementBuilder({
 													type: "input",
-													attributes: { id: "travel-item-drugs", type: "checkbox", name: "item", category: "drug" },
+													attributes: { id: "travel-item-drugs", type: "checkbox", name: "item" },
+													dataset: { category: "drug" },
 												}),
 												elementBuilder({ type: "label", attributes: { for: "travel-item-drugs" }, text: "Drugs" }),
 											],
@@ -258,7 +260,8 @@ async function startTable() {
 											children: [
 												elementBuilder({
 													type: "input",
-													attributes: { id: "travel-item-temporaries", type: "checkbox", name: "item", category: "temporary" },
+													attributes: { id: "travel-item-temporaries", type: "checkbox", name: "item" },
+													dataset: { category: "temporary" },
 												}),
 												elementBuilder({ type: "label", attributes: { for: "travel-item-temporaries" }, text: "Temporaries" }),
 											],
@@ -269,7 +272,8 @@ async function startTable() {
 											children: [
 												elementBuilder({
 													type: "input",
-													attributes: { id: "travel-item-weapons", type: "checkbox", name: "item", category: "weapon" },
+													attributes: { id: "travel-item-weapons", type: "checkbox", name: "item" },
+													dataset: { category: "weapon" },
 												}),
 												elementBuilder({ type: "label", attributes: { for: "travel-item-weapons" }, text: "Weapons" }),
 											],
@@ -280,7 +284,8 @@ async function startTable() {
 											children: [
 												elementBuilder({
 													type: "input",
-													attributes: { id: "travel-item-defensive", type: "checkbox", name: "item", category: "defensive" },
+													attributes: { id: "travel-item-defensive", type: "checkbox", name: "item" },
+													dataset: { category: "defensive" },
 												}),
 												elementBuilder({ type: "label", attributes: { for: "travel-item-defensive" }, text: "Defensive" }),
 											],
@@ -291,7 +296,8 @@ async function startTable() {
 											children: [
 												elementBuilder({
 													type: "input",
-													attributes: { id: "travel-item-other", type: "checkbox", name: "item", category: "other" },
+													attributes: { id: "travel-item-other", type: "checkbox", name: "item" },
+													dataset: { category: "other" },
 												}),
 												elementBuilder({ type: "label", attributes: { for: "travel-item-other" }, text: "Other" }),
 											],
@@ -324,30 +330,30 @@ async function startTable() {
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_mexico.svg",
-														country: "mexico",
 														alt: "Mexico",
 														title: "Mexico",
 													},
+													dataset: { country: "mexico" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_cayman.svg",
-														country: "cayman_islands",
 														alt: "Cayman Islands",
 														title: "Cayman Islands",
 													},
+													dataset: { country: "cayman_islands" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_canada.svg",
-														country: "canada",
 														alt: "Canada",
 														title: "Canada",
 													},
+													dataset: { country: "canada" },
 												}),
 											],
 										}),
@@ -361,40 +367,40 @@ async function startTable() {
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_hawaii.svg",
-														country: "hawaii",
 														alt: "Hawaii",
 														title: "Hawaii",
 													},
+													dataset: { country: "hawaii" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_uk.svg",
-														country: "united_kingdom",
 														alt: "United Kingdom",
 														title: "United Kingdom",
 													},
+													dataset: { country: "united_kingdom" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_argentina.svg",
-														country: "argentina",
 														alt: "Argentina",
 														title: "Argentina",
 													},
+													dataset: { country: "argentina" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_switzerland.svg",
-														country: "switzerland",
 														alt: "Switzerland",
 														title: "Switzerland",
 													},
+													dataset: { country: "switzerland" },
 												}),
 											],
 										}),
@@ -408,35 +414,36 @@ async function startTable() {
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_japan.svg",
-														country: "japan",
 														alt: "Japan",
 														title: "Japan",
 													},
+													dataset: { country: "japan" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_china.svg",
-														country: "china",
 														alt: "China",
 														title: "China",
 													},
+													dataset: { country: "china" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
-													attributes: { src: "/images/v2/travel_agency/flags/fl_uae.svg", country: "uae", alt: "UAE", title: "UAE" },
+													attributes: { src: "/images/v2/travel_agency/flags/fl_uae.svg", alt: "UAE", title: "UAE" },
+													dataset: { country: "uae" },
 												}),
 												elementBuilder({
 													type: "img",
 													class: "flag",
 													attributes: {
 														src: "/images/v2/travel_agency/flags/fl_south_africa.svg",
-														country: "south_africa",
 														alt: "South Africa",
 														title: "South Africa",
 													},
+													dataset: { country: "south_africa" },
 												}),
 											],
 										}),
@@ -448,17 +455,17 @@ async function startTable() {
 				}),
 			);
 
-			content.querySelector<HTMLElement>(".legend-icon").addEventListener("click", (event) => {
+			findElement(".legend-icon", content).addEventListener("click", (event) => {
 				if ((event.target as Element).classList.contains("legend-icon")) return;
 
-				const isOpen = !content.querySelector(".legend-content").classList.toggle("tt-hidden");
+				const isOpen = !findElement(".legend-content", content).classList.toggle("tt-hidden");
 
 				ttStorage.change({ filters: { travel: { open: isOpen } } });
 			});
 
-			content.querySelector(`.table-type[type=${filters.travel.type}]`).classList.add("active");
-			const typeBasic = content.querySelector(".table-type[type='basic']");
-			const typeAdvanced = content.querySelector(".table-type[type='advanced']");
+			findElement(`.table-type[data-type=${filters.travel.type}]`, content).classList.add("active");
+			const typeBasic = findElement(".table-type[data-type='basic']", content);
+			const typeAdvanced = findElement(".table-type[data-type='advanced']", content);
 
 			typeBasic.addEventListener("click", () => {
 				typeBasic.classList.add("active");
@@ -493,14 +500,14 @@ async function startTable() {
 				ttStorage.change({ filters: { travel: { type: "advanced" } } });
 			});
 
-			content.querySelector(".countries-select-all").addEventListener("click", () => {
+			findElement(".countries-select-all", content).addEventListener("click", () => {
 				for (const country of findAllElements(".countries .flag", content)) country.classList.add("selected");
 
 				ttStorage.change({ filters: { travel: { countries: getSelectedCountries(content) } } });
 
 				updateTable(content);
 			});
-			content.querySelector(".countries-select-none").addEventListener("click", () => {
+			findElement(".countries-select-none", content).addEventListener("click", () => {
 				for (const country of findAllElements(".countries .flag", content)) country.classList.remove("selected");
 
 				ttStorage.change({ filters: { travel: { countries: getSelectedCountries(content) } } });
@@ -508,33 +515,33 @@ async function startTable() {
 				updateTable(content);
 			});
 
-			content.querySelector<HTMLInputElement>("#travel-items").value = amount.toString();
+			findElement<HTMLInputElement>("#travel-items", content).value = amount.toString();
 
-			if (filters.travel.hideOutOfStock) content.querySelector<HTMLInputElement>("#hide-out-of-stock").checked = true;
-			if (filters.travel.applySalesTax) content.querySelector<HTMLInputElement>("#apply-sales-tax").checked = true;
-			if (filters.travel.sellAnonymously) content.querySelector<HTMLInputElement>("#sell-anonymously").checked = true;
+			if (filters.travel.hideOutOfStock) findElement<HTMLInputElement>("#hide-out-of-stock", content).checked = true;
+			if (filters.travel.applySalesTax) findElement<HTMLInputElement>("#apply-sales-tax", content).checked = true;
+			if (filters.travel.sellAnonymously) findElement<HTMLInputElement>("#sell-anonymously", content).checked = true;
 			for (const category of filters.travel.categories) {
-				const element = content.querySelector<HTMLInputElement>(`.categories input[name="item"][category="${category}"]`);
+				const element = findElement<HTMLInputElement>(`.categories input[name="item"][data-category="${category}"]`, content, true);
 				if (element) element.checked = true;
 			}
 			for (const country of filters.travel.countries) {
-				const element = content.querySelector(`.countries .flag[country="${country}"]`);
+				const element = findElement(`.countries .flag[data-country="${country}"]`, content, true);
 				if (element) element.classList.add("selected");
 			}
 
 			// Check for legend changes
-			content.querySelector("#travel-items").addEventListener("change", () => updateValues());
-			content.querySelector<HTMLElement>("#hide-out-of-stock").addEventListener("change", (event) => {
+			findElement("#travel-items", content).addEventListener("change", () => updateValues());
+			findElement("#hide-out-of-stock", content).addEventListener("change", (event) => {
 				ttStorage.change({ filters: { travel: { hideOutOfStock: (event.target as HTMLInputElement).checked } } });
 
 				updateTable(content);
 			});
-			content.querySelector<HTMLElement>("#apply-sales-tax").addEventListener("change", (event) => {
+			findElement("#apply-sales-tax", content).addEventListener("change", (event) => {
 				ttStorage.change({ filters: { travel: { applySalesTax: (event.target as HTMLInputElement).checked } } });
 
 				setTimeout(updateValues);
 			});
-			content.querySelector<HTMLElement>("#sell-anonymously").addEventListener("change", (event) => {
+			findElement("#sell-anonymously", content).addEventListener("change", (event) => {
 				ttStorage.change({ filters: { travel: { sellAnonymously: (event.target as HTMLInputElement).checked } } });
 
 				setTimeout(updateValues);
@@ -557,7 +564,7 @@ async function startTable() {
 			}
 		}
 
-		type StockItem = TravelData["stocks"][string]["stocks"][number];
+		type StockItem = NonNullable<TravelData["stocks"]>[string]["stocks"][number];
 
 		function toRow(item: StockItem, country: CountryInformation, lastUpdate: number) {
 			const tornItem = ITEM_RESOLVER.getFullItem(item.id);
@@ -593,10 +600,10 @@ async function startTable() {
 			if (value !== 0) {
 				const sales = value * amount;
 
-				const applySalesTax = content.querySelector<HTMLInputElement>("#apply-sales-tax").checked;
+				const applySalesTax = findElement<HTMLInputElement>("#apply-sales-tax", content).checked;
 				const salesTax = applySalesTax ? Math.ceil((sales * SALES_TAX) / 100) : 0;
 
-				const sellAnonymously = content.querySelector<HTMLInputElement>("#sell-anonymously").checked;
+				const sellAnonymously = findElement<HTMLInputElement>("#sell-anonymously", content).checked;
 				const anonymousTax = sellAnonymously ? Math.ceil((sales * ANONYMOUS_TAX) / 100) : 0;
 
 				profit = sales - (totalCost + salesTax + anonymousTax);
@@ -621,28 +628,28 @@ async function startTable() {
 							<img class="icon" src="/images/items/${item.id}/small.png" alt="${item.name}" title="${item.name}"/>
 							<span>${item.name}</a>
 						</a>
-						<div class="stock" value="${item.quantity}">
+						<div class="stock" data-value="${item.quantity}">
 							<span>${formatNumber(item.quantity)}</span>		
 							<div class="break advanced"></div>		
 							<span class="update basic">&nbsp;(${formatTime({ seconds: lastUpdate }, { type: "ago" })})</span>		
 							<span class="update advanced">(${formatTime({ seconds: lastUpdate }, { type: "ago", short: true })})</span>				
 						</div>
-						<div class="buy-price advanced" value="${item.cost}">
+						<div class="buy-price advanced" data-value="${item.cost}">
 							${formatNumber(item.cost, { shorten: true, currency: true })}
 						</div>
-						<div class="market-value advanced" value="${typeof value !== "number" ? 0 : value}">
+						<div class="market-value advanced" data-value="${typeof value !== "number" ? 0 : value}">
 							${formatNumber(value, { shorten: true, currency: true })}
 						</div>
-						<div class="profit-item advanced ${getValueClass(profitItem)}" value="${typeof profitItem !== "number" ? 0 : profitItem}">
+						<div class="profit-item advanced ${getValueClass(profitItem)}" data-value="${typeof profitItem !== "number" ? 0 : profitItem}">
 							${formatNumber(profitItem, { shorten: true, currency: true, forceOperation: true })}
 						</div>
-						<div class="profit-minute ${getValueClass(profitMinute)}" value="${typeof profitMinute !== "number" ? 0 : profitMinute}">
+						<div class="profit-minute ${getValueClass(profitMinute)}" data-value="${typeof profitMinute !== "number" ? 0 : profitMinute}">
 							${formatNumber(profitMinute, { shorten: true, currency: true, forceOperation: true })}
 						</div>
-						<div class="profit advanced ${getValueClass(profit)}" value="${typeof profit !== "number" ? 0 : profit}">
+						<div class="profit advanced ${getValueClass(profit)}" data-value="${typeof profit !== "number" ? 0 : profit}">
 							${formatNumber(profit, { shorten: true, currency: true, forceOperation: true })}
 						</div>
-						<div class="money advanced" value="${totalCost}">
+						<div class="money advanced" data-value="${totalCost}">
 							${formatNumber(totalCost, { shorten: true, currency: true })}
 						</div>
 					`,
@@ -692,7 +699,7 @@ async function startTable() {
 				searchParams.set("travel", `${isOpened}`);
 				history.pushState(null, "", `${location.pathname}?${searchParams.toString()}`);
 
-				const travelText = document.querySelector(".tt-travel-wrapper span");
+				const travelText = findElement(".tt-travel-wrapper span", true);
 				if (travelText) travelText.textContent = isOpened ? "Home" : "Travel Table";
 
 				if (isOpened) showTable();
@@ -701,15 +708,15 @@ async function startTable() {
 		}
 
 		function showTable() {
-			document.querySelector("#travel-root")?.classList.add("tt-travel-table-hide-plane");
+			findElement("#travel-root", true)?.classList.add("tt-travel-table-hide-plane");
 
-			findContainer("Travel Destinations").classList.remove("tt-hidden");
+			findContainer("Travel Destinations")!.classList.remove("tt-hidden");
 		}
 
 		function hideTable() {
-			document.querySelector("#travel-root")?.classList.remove("tt-travel-table-hide-plane");
+			findElement("#travel-root", true)?.classList.remove("tt-travel-table-hide-plane");
 
-			findContainer("Travel Destinations").classList.add("tt-hidden");
+			findContainer("Travel Destinations")!.classList.add("tt-hidden");
 		}
 	}
 }
@@ -721,23 +728,29 @@ function getValueClass(value: number | "N/A") {
 }
 
 function getSelectedCategories(content: Element) {
-	return findAllElements(".categories input[name='item']:checked", content).map((el) => el.getAttribute("category"));
+	return findAllElements(".categories input[name='item']:checked", content)
+		.map((el) => el.dataset.category)
+		.filter((category) => category !== undefined);
 }
 
 function getSelectedCountries(content: Element) {
-	return findAllElements(".countries .flag.selected", content).map((el) => el.getAttribute("country"));
+	return findAllElements(".countries .flag.selected", content)
+		.map((el) => el.dataset.country)
+		.filter((country) => country !== undefined);
 }
 
 function updateTable(content: Element) {
-	const table = document.querySelector("#tt-travel-table");
+	const table = findElement("#tt-travel-table", true);
 	if (!table) return;
 
 	const categories = getSelectedCategories(content);
 	const countries = getSelectedCountries(content);
-	const hideOutOfStock = content.querySelector<HTMLInputElement>("#hide-out-of-stock").checked;
+	const hideOutOfStock = findElement<HTMLInputElement>("#hide-out-of-stock", content).checked;
 
 	for (const row of findAllElements(".row:not(.header)", table)) {
-		const { country, category, stock } = row.dataset;
+		const country = row.dataset.country!;
+		const category = row.dataset.category!;
+		const stock = row.dataset.stock!;
 
 		if (
 			(categories.length > 0 && !categories.includes(category)) ||
@@ -750,13 +763,13 @@ function updateTable(content: Element) {
 }
 
 function updateValues() {
-	const content = findContainer("Travel Destinations", { selector: ":scope > main" });
-	const table = content.querySelector<HTMLElement>("#tt-travel-table");
+	const content = findContainer("Travel Destinations", { selector: ":scope > main" })!;
+	const table = findElement("#tt-travel-table", content, true);
 	if (!table) return;
 
-	const amount = parseInt(content.querySelector<HTMLInputElement>("#travel-items").value);
-	const applySalesTax = content.querySelector<HTMLInputElement>("#apply-sales-tax").checked;
-	const sellAnonymously = content.querySelector<HTMLInputElement>("#sell-anonymously").checked;
+	const amount = parseInt(findElement<HTMLInputElement>("#travel-items", content).value);
+	const applySalesTax = findElement<HTMLInputElement>("#apply-sales-tax", content).checked;
+	const sellAnonymously = findElement<HTMLInputElement>("#sell-anonymously", content).checked;
 
 	for (const row of findAllElements(".row:not(.header)", table)) {
 		const { value, cost, travelCost, time } = toCorrectType(row.dataset);
@@ -773,11 +786,11 @@ function updateValues() {
 			const profitItem = dropDecimals(profit / amount);
 			const profitMinute = dropDecimals(profit / (modifiedTime * 2));
 
-			const elementProfitItem = row.querySelector(".profit-item");
-			const elementProfitMinute = row.querySelector(".profit-minute");
-			const elementProfit = row.querySelector(".profit");
+			const elementProfitItem = findElement(".profit-item", row);
+			const elementProfitMinute = findElement(".profit-minute", row);
+			const elementProfit = findElement(".profit", row);
 
-			const allElements: [Element, number][] = [
+			const allElements: [HTMLElement, number][] = [
 				[elementProfitItem, profitItem],
 				[elementProfitMinute, profitMinute],
 				[elementProfit, profit],
@@ -787,11 +800,11 @@ function updateValues() {
 				element.classList.remove("positive", "negative");
 				element.classList.add(getValueClass(value));
 				element.textContent = formatNumber(value, { shorten: true, currency: true, forceOperation: true });
-				element.setAttribute("value", value.toString());
+				element.dataset.value = value.toString();
 			});
 		}
 
-		row.querySelector(".money").textContent = formatNumber(totalCost, { shorten: true, currency: true });
+		findElement(".money", row).textContent = formatNumber(totalCost, { shorten: true, currency: true });
 	}
 
 	resortTable(table);
@@ -846,7 +859,7 @@ function getTimeModifier(type: TravelType) {
 
 function getTravelType() {
 	if (getPage() === "travel") {
-		const element = document.querySelector<HTMLInputElement>("input[name='travelType'][aria-checked='true']");
+		const element = findElement<HTMLInputElement>("input[name='travelType'][aria-checked='true']", true);
 
 		if (!element) return hasAPIData() ? getAPIType() : "standard";
 		else return toCorrectMethod(element.value);

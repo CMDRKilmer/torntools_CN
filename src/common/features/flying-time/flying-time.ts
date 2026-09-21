@@ -1,8 +1,8 @@
 import "./flying-time.css";
-import { FEATURE_MANAGER } from "@common/utils/context";
 import { settings } from "@common/utils/data/database";
 import { elementBuilder, mobile, tabletVertical } from "@common/utils/functions/dom";
 import { addCustomListener, EVENT_CHANNELS } from "@common/utils/functions/events";
+import { findElement } from "@common/utils/functions/find-elements";
 import { formatDate, formatTime, textToTime } from "@common/utils/functions/formatting";
 import { requireElement } from "@common/utils/functions/requires";
 import { getPageStatus, isAbroad, isFlying } from "@common/utils/functions/torn";
@@ -10,22 +10,10 @@ import { Feature } from "@features/feature";
 
 async function initialise() {
 	if (mobile || tabletVertical) {
-		addCustomListener(EVENT_CHANNELS.TRAVEL_SELECT_COUNTRY, () => {
-			if (!FEATURE_MANAGER.isEnabled(FlyingTimeFeature)) return;
-
-			showTime();
-		});
-		addCustomListener(EVENT_CHANNELS.TRAVEL_SELECT_TYPE, () => {
-			if (!FEATURE_MANAGER.isEnabled(FlyingTimeFeature)) return;
-
-			showTime();
-		});
+		addCustomListener(EVENT_CHANNELS.TRAVEL_SELECT_COUNTRY, showTime);
+		addCustomListener(EVENT_CHANNELS.TRAVEL_SELECT_TYPE, showTime);
 	} else {
-		addCustomListener(EVENT_CHANNELS.TRAVEL_DESTINATION_UPDATE, () => {
-			if (!FEATURE_MANAGER.isEnabled(FlyingTimeFeature)) return;
-
-			showTime();
-		});
+		addCustomListener(EVENT_CHANNELS.TRAVEL_DESTINATION_UPDATE, showTime);
 	}
 }
 
@@ -35,8 +23,10 @@ async function showTime() {
 	);
 	if (!container) return;
 
-	const durationText = container.querySelector(
+	const durationText = findElement(
 		["[class*='flightDetailsGrid'] > :nth-child(2) span[aria-hidden]", "[class*='confirmPanel___'] p:nth-child(2) [class*='emphasis___']"].join(", "),
+		container,
+		true,
 	)?.textContent;
 	if (!durationText) return;
 
@@ -48,10 +38,10 @@ async function showTime() {
 
 	const text = `Landing at ${format(arrivalTime)} | Return at ${format(returnTime)}`;
 
-	const timer = document.querySelector(".tt-flying-time");
+	const timer = findElement(".tt-flying-time", true);
 	if (timer) timer.textContent = text;
 	else {
-		document.querySelector("#travel-root").appendChild(elementBuilder({ type: "span", class: "tt-flying-time", text }));
+		findElement("#travel-root").appendChild(elementBuilder({ type: "span", class: "tt-flying-time", text }));
 	}
 	function format(date: Date) {
 		if (date.getDate() === now.getDate()) return formatTime(date, { hideSeconds: true });

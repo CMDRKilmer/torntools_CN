@@ -179,7 +179,7 @@ export class TTExtensionStorage extends TornToolsStorage {
 	}
 
 	override async reset(key?: "attackHistory" | "stakeouts" | "factionStakeouts"): Promise<void> {
-		if (["attackHistory", "stakeouts", "factionStakeouts"].includes(key)) {
+		if (key && ["attackHistory", "stakeouts", "factionStakeouts"].includes(key)) {
 			await this.set({ [key]: getDefaultStorage(DEFAULT_STORAGE)[key] });
 		} else {
 			const apiKey = api ? api.torn.key : undefined;
@@ -199,7 +199,7 @@ export class TTExtensionStorage extends TornToolsStorage {
 		if (browser.storage.local.getBytesInUse) {
 			size = await browser.storage.local.getBytesInUse();
 			size += JSON.stringify((await readCache()) ?? {}).length;
-		} else size = JSON.stringify(await this.get(null)).length;
+		} else size = JSON.stringify(await this.get()).length;
 
 		return size;
 	}
