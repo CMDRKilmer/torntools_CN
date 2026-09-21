@@ -1,5 +1,4 @@
 import { ttStorage } from "@common/utils/context";
-import { DEFAULT_STORAGE, getDefaultStorage } from "@common/utils/data/default-database";
 import { initializeDatabase, storageListeners } from "@common/utils/data/database";
 import type {
 	DatabaseApi,
@@ -10,6 +9,7 @@ import type {
 	DatabaseTorndata,
 	DatabaseUserdata,
 } from "@common/utils/data/database";
+import { DEFAULT_STORAGE, getDefaultStorage } from "@common/utils/data/default-database";
 import { writable } from "svelte/store";
 
 /**
