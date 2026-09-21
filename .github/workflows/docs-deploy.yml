@@ -19,6 +19,10 @@ concurrency:
 
 jobs:
   build:
+    # docs-deploy 在本仓库 (CMDRKilmer/torntools_CN fork) 上关闭。
+    # site 仍指向 upstream mephiles.github.io,在 fork 上部署会指向不存在的 pages。
+    # 需要本仓库开启 Pages + 改 site/base 才能启用。
+    if: github.repository == 'Mephiles/torntools_extension'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -38,6 +42,7 @@ jobs:
           path: docs/dist
 
   deploy:
+    if: github.repository == 'Mephiles/torntools_extension'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
