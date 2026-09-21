@@ -45,4 +45,10 @@ jobs:
               env:
                   PG_TT_TOKEN: ${{ secrets.PG_TT_TOKEN }}
               run: |
-                  curl --fail -X POST -H "X-API-TOKEN: $PG_TT_TOKEN" -F "branch=$SAFE_BRANCH" -F "editions=chrome" -F "files=@torntools-chrome.zip;type=application/zip" -F "editions=firefox" -F "files=@torntools-firefox.zip;type=application/zip" https://torntools.tornplayground.eu/api/beta-versions
+                  # --fail-with-body 在非 2xx 时仍输出响应体,便于诊断 token/服务端问题。
+                  curl --fail-with-body --show-error -X POST \
+                      -H "X-API-KEY: $PG_TT_TOKEN" \
+                      -F "branch=$SAFE_BRANCH" \
+                      -F "editions=chrome" -F "files=@torntools-chrome.zip;type=application/zip" \
+                      -F "editions=firefox" -F "files=@torntools-firefox.zip;type=application/zip" \
+                      https://torntools.tornplayground.eu/api/beta-versions

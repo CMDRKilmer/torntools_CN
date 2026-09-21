@@ -56,7 +56,8 @@ jobs:
                           for file in "$@"; do
                               upload_args+=(-F "files=@${file};type=application/javascript")
                           done
-                          curl --fail -sS -X POST -H "X-API-TOKEN: ${PG_TT_TOKEN}" "${upload_args[@]}" https://torntools.tornplayground.eu/api/userscripts
+                          # --fail-with-body 让 curl 在 4xx/5xx 时仍输出服务端响应体,便于诊断。
+                          curl --fail-with-body -sS --show-error -X POST -H "X-API-KEY: ${PG_TT_TOKEN}" "${upload_args[@]}" https://torntools.tornplayground.eu/api/userscripts
                       ' _ \
                       | jq -s 'map(.userscripts) | {userscripts: add}' > /tmp/userscripts-response.json
 
