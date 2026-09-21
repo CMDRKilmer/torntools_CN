@@ -201,7 +201,7 @@ const UI_SHORT_WORDS = new Set([
  *   \t"Key Name": "value",
  */
 function parseLine(line: string): { key: string; value: string; valueStart: number; valueEnd: number } | null {
-	if (!line.startsWith('	')) return null;
+	if (!line.startsWith("	")) return null;
 	const trimmed = line.trimStart();
 	if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) return null;
 
