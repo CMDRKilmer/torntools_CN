@@ -1857,6 +1857,23 @@ export function isCaptcha() {
 	return !!findElement(".captcha", true);
 }
 
+/**
+ * 检测当前页面是否处于 Cloudflare 机器人验证挑战阶段。
+ *
+ * CF 验证期间 torn.com 的 DOM 被 Cloudflare 重写,所有 requireElement 会触发
+ * "Maximum cycles reached";且 CF 会关闭 background SW 的 message channel,
+ * 导致 cacheGet 等操作抛 "message channel closed" 错误。
+ *
+ * 这种页面让扩展整个让位,等 CF 验证完成、用户重新加载后扩展自然恢复。
+ */
+export function isCloudflareChallenge(): boolean {
+	if (location.search.includes("_cf_chl_rt_tk=")) return true;
+	if (location.search.includes("__cf_chl_rt_tk=")) return true;
+	if (location.hash.includes("cf-chl-bypass")) return true;
+	if (document.querySelector("#cf-chl-bypass, .cf-challenge-running, #challenge-form")) return true;
+	return false;
+}
+
 export function hasDarkMode() {
 	return location.host === browser.runtime.id ? document.body.classList.contains("dark") : document.body.classList.contains("dark-mode");
 }

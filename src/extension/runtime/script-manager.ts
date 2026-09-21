@@ -20,7 +20,7 @@ import { setupTravelHomePage } from "@common/pages/travel-home-page";
 import { setupUserlistPage } from "@common/pages/userlist-page";
 import { FEATURE_MANAGER } from "@common/utils/context";
 import { initializeDatabase } from "@common/utils/data/database";
-import { getPage } from "@common/utils/functions/torn";
+import { getPage, isCloudflareChallenge } from "@common/utils/functions/torn";
 import AbroadEnergyWarningFeature from "@features/abroad-energy-warning/abroad-energy-warning";
 import AbroadItemsFilterFeature from "@features/abroad-items-filter/abroad-items-filter";
 import AbroadPeopleFilterFeature from "@features/abroad-people-filter/abroad-people-filter";
@@ -618,23 +618,4 @@ function isPageWithItemValues(page: string) {
 
 function isRecaptcha(page: string) {
 	return page === "recaptcha";
-}
-
-/**
- * 检测当前页面是否处于 Cloudflare 机器人验证挑战阶段。
- *
- * CF 验证期间 torn.com 的 DOM 被 Cloudflare 重写,所有 requireElement 会触发
- * "Maximum cycles reached";且 CF 会关闭 background SW 的 message channel,
- * 导致 cacheGet 等操作抛 "message channel closed" 错误。
- *
- * 这种页面让扩展整个让位,等 CF 验证完成、用户重新加载后扩展自然恢复。
- */
-function isCloudflareChallenge(): boolean {
-	// CF challenge 触发时,URL 会带 _cf_chl_rt_tk 查询参数(无论前后端),
-	// 同时 DOM 中可能有 #cf-chl-bypass / .cf-challenge-running 等标记。
-	if (location.search.includes("_cf_chl_rt_tk=")) return true;
-	if (location.search.includes("__cf_chl_rt_tk=")) return true;
-	if (location.hash.includes("cf-chl-bypass")) return true;
-	if (document.querySelector("#cf-chl-bypass, .cf-challenge-running, #challenge-form")) return true;
-	return false;
 }

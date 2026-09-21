@@ -1,4 +1,5 @@
 import { findElement } from "@common/utils/functions/find-elements";
+import { isCloudflareChallenge } from "@common/utils/functions/torn";
 import { TO_MILLIS } from "@common/utils/functions/utilities";
 
 type RequireConditionFn<T = any> = () => T | { value: NonNullable<T>; success: boolean };
@@ -114,6 +115,13 @@ export function requireElement<T extends Element = HTMLElement>(selector: string
 	const error = new Error("Maximum cycles reached.");
 
 	return new Promise((resolve, reject) => {
+		// Cloudflare 机器人验证期间 torn.com DOM 被 CF 重写,所有 requireElement
+		// 都会因找不到目标元素触发 Maximum cycles;立即拒绝以避免噪音错误。
+		if (isCloudflareChallenge()) {
+			reject(error);
+			return;
+		}
+
 		const element = findElement<T>(selector, options.parent, true);
 		if (options.invert && !element) {
 			resolve(true);
