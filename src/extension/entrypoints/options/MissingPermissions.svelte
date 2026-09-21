@@ -27,32 +27,40 @@
 	async function checkMissingPermissions() {
 		if (!browser.permissions) return;
 
-		const { settings } = await loadDatabase();
+		try {
+			const { settings } = await loadDatabase();
 
-		const origins: { label: string; origin: string }[] = (
-			[
-				{ enabled: settings.external.tornstats, label: "TornStats", origin: "tornstats" },
-				{ enabled: settings.external.yata, label: "YATA", origin: "yata" },
-				{ enabled: settings.external.prometheus, label: "Prometheus", origin: "prometheus" },
-				{ enabled: settings.external.lzpt, label: "LZPT", origin: "lzpt" },
-				{ enabled: settings.external.tornw3b, label: "Torn W3B", origin: "tornw3b" },
-				{ enabled: settings.external.ffScouter, label: "FF Scouter", origin: "ffscouter" },
-				{ enabled: settings.external.tornintel, label: "Torn Intel", origin: "tornintel" },
-				{ enabled: settings.external.tornprobability, label: "Torn Probability", origin: "tornprobability" },
-			] satisfies { enabled: boolean; label: string; origin: FetchLocation }[]
-		)
-			.filter(({ enabled }) => enabled)
-			.map(({ label, origin }) => ({ label, origin: getPermissionOrigin(origin) }));
+			// 防御:若 settings.external 不存在(扩展上下文失效 / 旧版持久化数据未迁移),
+			// 视为没有启用任何外部服务,跳过权限检查避免炸。
+			if (!settings || !settings.external) return;
 
-		const reviveProvider = settings.pages.global.reviveProvider;
-		if (reviveProvider) {
-			const provider = REVIVE_PROVIDERS.find((p) => p.provider === reviveProvider);
+			const origins: { label: string; origin: string }[] = (
+				[
+					{ enabled: settings.external.tornstats, label: "TornStats", origin: "tornstats" },
+					{ enabled: settings.external.yata, label: "YATA", origin: "yata" },
+					{ enabled: settings.external.prometheus, label: "Prometheus", origin: "prometheus" },
+					{ enabled: settings.external.lzpt, label: "LZPT", origin: "lzpt" },
+					{ enabled: settings.external.tornw3b, label: "Torn W3B", origin: "tornw3b" },
+					{ enabled: settings.external.ffScouter, label: "FF Scouter", origin: "ffscouter" },
+					{ enabled: settings.external.tornintel, label: "Torn Intel", origin: "tornintel" },
+					{ enabled: settings.external.tornprobability, label: "Torn Probability", origin: "tornprobability" },
+				] satisfies { enabled: boolean; label: string; origin: FetchLocation }[]
+			)
+				.filter(({ enabled }) => enabled)
+				.map(({ label, origin }) => ({ label, origin: getPermissionOrigin(origin) }));
 
-			if (provider) origins.push({ label: provider.name, origin: provider.origin });
+			const reviveProvider = settings.pages?.global?.reviveProvider;
+			if (reviveProvider) {
+				const provider = REVIVE_PROVIDERS.find((p) => p.provider === reviveProvider);
+
+				if (provider) origins.push({ label: provider.name, origin: provider.origin });
+			}
+
+			missingOrigins = await getMissingOrigins(origins);
+			openDialog = missingOrigins.length > 0;
+		} catch (error) {
+			console.warn("TT - Failed to check missing permissions:", error);
 		}
-
-		missingOrigins = await getMissingOrigins(origins);
-		openDialog = missingOrigins.length > 0;
 	}
 
 	async function getMissingOrigins(origins: PermissionOrigin[]) {

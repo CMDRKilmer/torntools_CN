@@ -32,22 +32,34 @@ function handlePopoutClass() {
 }
 
 export async function handleTheme() {
-	await loadDatabase();
+	try {
+		await loadDatabase();
 
-	document.documentElement.style.setProperty("--tt-theme-color", settings.themes.containers !== "alternative" ? "#fff" : "#acea00");
-	document.documentElement.style.setProperty(
-		"--tt-theme-background",
-		settings.themes.containers !== "alternative" ? "var(--tt-background-green)" : "var(--tt-background-alternative)",
-	);
-	storageListeners.settings.push((oldSettings) => {
-		if (!oldSettings?.themes || !settings?.themes || oldSettings.themes.containers !== settings.themes.containers) {
+		// 防御:若 settings.themes 不存在(扩展上下文失效 / 旧版持久化数据未迁移),
+		// 跳过主题设置并继续使用默认 CSS 变量,避免炸。
+		if (!settings?.themes) {
+			console.warn("TT - settings.themes unavailable, skipping theme application.");
+			return;
+		}
+
+		const applyTheme = () => {
 			document.documentElement.style.setProperty("--tt-theme-color", settings.themes.containers !== "alternative" ? "#fff" : "#acea00");
 			document.documentElement.style.setProperty(
 				"--tt-theme-background",
 				settings.themes.containers !== "alternative" ? "var(--tt-background-green)" : "var(--tt-background-alternative)",
 			);
-		}
-	});
+		};
+
+		applyTheme();
+
+		storageListeners.settings.push((oldSettings) => {
+			if (!oldSettings?.themes || !settings?.themes || oldSettings.themes.containers !== settings.themes.containers) {
+				applyTheme();
+			}
+		});
+	} catch (error) {
+		console.warn("TT - Failed to apply theme:", error);
+	}
 }
 
 export function createOverlay() {

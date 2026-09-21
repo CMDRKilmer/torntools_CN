@@ -96,7 +96,15 @@ const ExtensionRuntimeInformation: RuntimeInformation = {
 };
 
 const ExtensionRuntimeStorage: RuntimeStorage = {
-	addChangeListener: (cb) => browser.storage.onChanged.addListener(cb),
+	addChangeListener: (cb) => {
+		// 防御:扩展上下文失效或 SW 未启动时,browser.storage 可能 undefined 或抛错,
+		// 用 try/catch 避免 uncaught error 污染 DevTools。
+		try {
+			browser.storage.onChanged.addListener(cb);
+		} catch (error) {
+			console.warn("TT - Failed to register storage change listener:", error);
+		}
+	},
 };
 
 const ExtensionOffloadService: OffloadService = {
