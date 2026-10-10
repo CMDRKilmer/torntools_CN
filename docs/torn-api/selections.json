@@ -1,0 +1,1402 @@
+{
+	"source": "https://www.torn.com/api.html",
+	"table_source": "https://www.torn.com/apipublic.php?lookup=true",
+	"captured_at": "2026-10-10",
+	"access_levels": {
+		"public": "Public 公开",
+		"minimal": "Minimal Access 最低权限",
+		"limited": "Limited Access 受限权限",
+		"full": "Full Access 完全权限"
+	},
+	"version_markers": {
+		"both": "v1 + v2 均可用（表中无标记）",
+		"v1_only": "仅 API v1（表中标记 *）",
+		"v2_only": "仅 API v2（表中标记 **）",
+		"v1_v2_diff": "v1 与 v2 权限不同（表中标记 ***）"
+	},
+	"stats": {
+		"categories": 9,
+		"total": 223,
+		"by_access": {
+			"public": 134,
+			"minimal": 56,
+			"limited": 31,
+			"full": 1,
+			"unknown": 1
+		},
+		"by_version": {
+			"both": 113,
+			"v1_only": 30,
+			"v2_only": 79,
+			"v1_v2_diff": 1
+		},
+		"by_category": {
+			"user": 73,
+			"faction": 60,
+			"company": 11,
+			"property": 3,
+			"market": 9,
+			"torn": 51,
+			"racing": 8,
+			"forum": 6,
+			"key": 2
+		}
+	},
+	"categories": [
+		{
+			"name": "user",
+			"selections": [
+				{
+					"name": "hof",
+					"access": "public",
+					"version": "v1_v2_diff"
+				},
+				{
+					"name": "competition",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "faction",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "forumposts",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "forumthreads",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "job",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "properties",
+					"access": "public",
+					"version": "both",
+					"version_source": "empirical"
+				},
+				{
+					"name": "search",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "snapshot",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "basic",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "bazaar",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "bounties",
+					"access": "public",
+					"version": "v2_only",
+					"version_source": "empirical"
+				},
+				{
+					"name": "criminalrecord",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "discord",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "display",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "icons",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "medals",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "personalstats",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "profile",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "property",
+					"access": "public",
+					"version": "v2_only",
+					"version_source": "empirical"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "calendar",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "enlistedcars",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "forumfeed",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "forumfriends",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "forumsubscribedthreads",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "itemmods",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "organizedcrime",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "organizedcrimes",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "races",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "racingrecords",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "virus",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "ammo",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "bars",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "cooldowns",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "crimes",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "education",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "equipment",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "gym",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "honors",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "inventory",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "jobpoints",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "jobranks",
+					"access": "minimal",
+					"version": "v2_only",
+					"version_source": "empirical"
+				},
+				{
+					"name": "merits",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "missions",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "notifications",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "perks",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "refills",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "revives",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "revivesfull",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "skills",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "travel",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "weaponexp",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "workstats",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "casino",
+					"access": "limited",
+					"version": "v2_only"
+				},
+				{
+					"name": "itemmarket",
+					"access": "limited",
+					"version": "v2_only"
+				},
+				{
+					"name": "list",
+					"access": "limited",
+					"version": "v2_only"
+				},
+				{
+					"name": "trade",
+					"access": "limited",
+					"version": "v2_only"
+				},
+				{
+					"name": "trades",
+					"access": "limited",
+					"version": "v2_only"
+				},
+				{
+					"name": "attacks",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "attacksfull",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "battlestats",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "events",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "messages",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "money",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "networth",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "newevents",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "newmessages",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "reports",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "stocks",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "log",
+					"access": "full",
+					"version": "both"
+				},
+				{
+					"name": "publicstatus",
+					"access": "unknown",
+					"version": "v1_only",
+					"version_source": "empirical",
+					"access_source": "official_table_missing"
+				}
+			]
+		},
+		{
+			"name": "faction",
+			"selections": [
+				{
+					"name": "chainreport",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "dirtybombs",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "members",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "rackets",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "raids",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "rankedwarreport",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "search",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "snapshot",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "territoryownership",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "territorywarreport",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "territorywars",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "warfare",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "warfarechains",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "warfareraids",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "warfareranked",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "warfareterritory",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "wars",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "basic",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "chain",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "chains",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "hof",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "raidreport",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "rankedwars",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "territory",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "crime",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "news",
+					"access": "minimal",
+					"version": "v2_only"
+				},
+				{
+					"name": "armor",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "armorynews",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "boosters",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "caches",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "crimenews",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "drugs",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "mainnews",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "medical",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "membershipnews",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "temporary",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "territorynews",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "utilities",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "weapons",
+					"access": "minimal",
+					"version": "v1_only"
+				},
+				{
+					"name": "applications",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "crimeexp",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "crimes",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "positions",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "revives",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "revivesfull",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "stats",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "upgrades",
+					"access": "minimal",
+					"version": "both"
+				},
+				{
+					"name": "balance",
+					"access": "limited",
+					"version": "v2_only"
+				},
+				{
+					"name": "inventory",
+					"access": "limited",
+					"version": "v2_only"
+				},
+				{
+					"name": "attacknews",
+					"access": "limited",
+					"version": "v1_only"
+				},
+				{
+					"name": "cesium",
+					"access": "limited",
+					"version": "v1_only"
+				},
+				{
+					"name": "currency",
+					"access": "limited",
+					"version": "v1_only"
+				},
+				{
+					"name": "donations",
+					"access": "limited",
+					"version": "v1_only"
+				},
+				{
+					"name": "fundsnews",
+					"access": "limited",
+					"version": "v1_only"
+				},
+				{
+					"name": "attacks",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "attacksfull",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "contributors",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "reports",
+					"access": "limited",
+					"version": "both"
+				}
+			]
+		},
+		{
+			"name": "company",
+			"selections": [
+				{
+					"name": "search",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "snapshot",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "companies",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "employees",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "profile",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "detailed",
+					"access": "limited",
+					"version": "v1_only"
+				},
+				{
+					"name": "applications",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "news",
+					"access": "limited",
+					"version": "both"
+				},
+				{
+					"name": "stock",
+					"access": "limited",
+					"version": "both"
+				}
+			]
+		},
+		{
+			"name": "property",
+			"selections": [
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "property",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				}
+			]
+		},
+		{
+			"name": "market",
+			"selections": [
+				{
+					"name": "auctionhouse",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "auctionhouselisting",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "itemmarket",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "properties",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "rentals",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "bazaar",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "pointsmarket",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				}
+			]
+		},
+		{
+			"name": "torn",
+			"selections": [
+				{
+					"name": "attacklog",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "bounties",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "calendar",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "crimes",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "hof",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "itemammo",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "itemmods",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "merits",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "museum",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "organizedcrimes",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "subcrimes",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "chainreport",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "dirtybombs",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "elimination",
+					"access": "public",
+					"version": "v2_only",
+					"version_source": "empirical"
+				},
+				{
+					"name": "eliminationteam",
+					"access": "public",
+					"version": "v2_only",
+					"version_source": "empirical"
+				},
+				{
+					"name": "pawnshop",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "rackets",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "raidreport",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "rankedwarreport",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "rankedwars",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "territorynames",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "territorywarreport",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "territorywars",
+					"access": "public",
+					"version": "v1_only"
+				},
+				{
+					"name": "bank",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "cards",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "cityshops",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "companies",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "competition",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "education",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "factionhof",
+					"access": "public",
+					"version": "v2_only",
+					"version_source": "empirical"
+				},
+				{
+					"name": "factiontree",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "gyms",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "honors",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "itemdetails",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "items",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "itemstats",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "logcategories",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "logtypes",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "medals",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "organisedcrimes",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "pokertables",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "properties",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "raids",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "rockpaperscissors",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "searchforcash",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "shoplifting",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "stats",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "stocks",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "territory",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				}
+			]
+		},
+		{
+			"name": "racing",
+			"selections": [
+				{
+					"name": "cars",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "carupgrades",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "race",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "races",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "records",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "tracks",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				}
+			]
+		},
+		{
+			"name": "forum",
+			"selections": [
+				{
+					"name": "categories",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "posts",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "thread",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "threads",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "lookup",
+					"access": "public",
+					"version": "both"
+				},
+				{
+					"name": "timestamp",
+					"access": "public",
+					"version": "both"
+				}
+			]
+		},
+		{
+			"name": "key",
+			"selections": [
+				{
+					"name": "log",
+					"access": "public",
+					"version": "v2_only"
+				},
+				{
+					"name": "info",
+					"access": "public",
+					"version": "both"
+				}
+			]
+		}
+	],
+	"cross_check_v1": {
+		"user": {
+			"doc_total": 73,
+			"doc_v1_available": 47,
+			"doc_v2_only": 26,
+			"live_total": 72,
+			"doc_v1_not_in_live": ["publicstatus"],
+			"live_not_in_doc": [],
+			"live_minus_doc_v1": [
+				"bounties",
+				"calendar",
+				"casino",
+				"competition",
+				"enlistedcars",
+				"faction",
+				"forumfeed",
+				"forumfriends",
+				"forumposts",
+				"forumsubscribedthreads",
+				"forumthreads",
+				"itemmarket",
+				"itemmods",
+				"job",
+				"jobranks",
+				"list",
+				"organizedcrime",
+				"organizedcrimes",
+				"property",
+				"races",
+				"racingrecords",
+				"search",
+				"snapshot",
+				"trade",
+				"trades",
+				"virus"
+			],
+			"live_minus_doc_v1_equals_v2_only": true
+		},
+		"faction": {
+			"doc_total": 60,
+			"doc_v1_available": 39,
+			"doc_v2_only": 21,
+			"live_total": 60,
+			"doc_v1_not_in_live": [],
+			"live_not_in_doc": [],
+			"live_minus_doc_v1": [
+				"balance",
+				"chainreport",
+				"crime",
+				"dirtybombs",
+				"inventory",
+				"members",
+				"news",
+				"rackets",
+				"raids",
+				"rankedwarreport",
+				"search",
+				"snapshot",
+				"territoryownership",
+				"territorywarreport",
+				"territorywars",
+				"warfare",
+				"warfarechains",
+				"warfareraids",
+				"warfareranked",
+				"warfareterritory",
+				"wars"
+			],
+			"live_minus_doc_v1_equals_v2_only": true
+		},
+		"company": {
+			"doc_total": 11,
+			"doc_v1_available": 9,
+			"doc_v2_only": 2,
+			"live_total": 11,
+			"doc_v1_not_in_live": [],
+			"live_not_in_doc": [],
+			"live_minus_doc_v1": ["search", "snapshot"],
+			"live_minus_doc_v1_equals_v2_only": true
+		},
+		"property": {
+			"doc_total": 3,
+			"doc_v1_available": 3,
+			"doc_v2_only": 0,
+			"live_total": 3,
+			"doc_v1_not_in_live": [],
+			"live_not_in_doc": [],
+			"live_minus_doc_v1": [],
+			"live_minus_doc_v1_equals_v2_only": true
+		},
+		"market": {
+			"doc_total": 9,
+			"doc_v1_available": 4,
+			"doc_v2_only": 5,
+			"live_total": 9,
+			"doc_v1_not_in_live": [],
+			"live_not_in_doc": [],
+			"live_minus_doc_v1": ["auctionhouse", "auctionhouselisting", "itemmarket", "properties", "rentals"],
+			"live_minus_doc_v1_equals_v2_only": true
+		},
+		"torn": {
+			"doc_total": 51,
+			"doc_v1_available": 37,
+			"doc_v2_only": 14,
+			"live_total": 51,
+			"doc_v1_not_in_live": [],
+			"live_not_in_doc": [],
+			"live_minus_doc_v1": [
+				"attacklog",
+				"bounties",
+				"calendar",
+				"crimes",
+				"elimination",
+				"eliminationteam",
+				"factionhof",
+				"hof",
+				"itemammo",
+				"itemmods",
+				"merits",
+				"museum",
+				"organizedcrimes",
+				"subcrimes"
+			],
+			"live_minus_doc_v1_equals_v2_only": true
+		}
+	},
+	"corrections": [
+		{
+			"selection": "user|properties",
+			"from": "v2_only",
+			"to": "both",
+			"evidence": "v1 调用返回 code 23（v2 专属）或 v1 正常返回数据，以实测为准"
+		},
+		{
+			"selection": "user|bounties",
+			"from": "both",
+			"to": "v2_only",
+			"evidence": "v1 调用返回 code 23（v2 专属）或 v1 正常返回数据，以实测为准"
+		},
+		{
+			"selection": "user|property",
+			"from": "both",
+			"to": "v2_only",
+			"evidence": "v1 调用返回 code 23（v2 专属）或 v1 正常返回数据，以实测为准"
+		},
+		{
+			"selection": "user|jobranks",
+			"from": "both",
+			"to": "v2_only",
+			"evidence": "v1 调用返回 code 23（v2 专属）或 v1 正常返回数据，以实测为准"
+		},
+		{
+			"selection": "torn|elimination",
+			"from": "v1_only",
+			"to": "v2_only",
+			"evidence": "v1 调用返回 code 23（v2 专属）或 v1 正常返回数据，以实测为准"
+		},
+		{
+			"selection": "torn|eliminationteam",
+			"from": "v1_only",
+			"to": "v2_only",
+			"evidence": "v1 调用返回 code 23（v2 专属）或 v1 正常返回数据，以实测为准"
+		},
+		{
+			"selection": "torn|factionhof",
+			"from": "both",
+			"to": "v2_only",
+			"evidence": "v1 调用返回 code 23（v2 专属）或 v1 正常返回数据，以实测为准"
+		},
+		{
+			"selection": "user|publicstatus",
+			"from": "not_in_official_table",
+			"to": "v1_only",
+			"evidence": "api.html 表格与 selections=lookup 均未收录；v1 正常返回，v2 返回 code 22（仅 v1 可用）；权限等级未知（需非 Full Access 密钥才能判定）"
+		}
+	],
+	"empirical_validation": {
+		"date": "2026-10-10",
+		"method": "使用一个 Full Access 密钥，对该密钥允许的全部 selection 逐个调用 v1 端点并记录返回码",
+		"selections_probed": 163,
+		"v1_ok": 95,
+		"v2_only_rejected": 56,
+		"needs_target_id": 11,
+		"other_error": 1,
+		"notes": "code 23 = 仅 v2 可用；code 6 = 需要额外目标 ID 参数；code 17 = Torn 后端错误（torn.raidreport，两次复现）"
+	}
+}
